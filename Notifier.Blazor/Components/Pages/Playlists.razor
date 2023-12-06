@@ -1,0 +1,247 @@
+﻿@page "/playlists"
+@using Notifier.Blazor.Helpers
+@using Notifier.Logic.Models
+@using Notifier.Logic.Services
+@using Notifier.Vk.Contract
+@using Notifier.Vk.Models
+@using Notifier.Logic.Extensions
+@inject AccessTokenService _accessTokenService
+@inject OwnersService _ownersService
+@inject PlaylistsService _playlistsService
+@inject IVkRestClientBuilder _vkRestClientBuilder
+@inject ISnackbar _snackbar
+@inject NavigationManager _navigationManager
+
+<PageTitle>Playlists</PageTitle>
+<MudText Typo="Typo.h3">Playlists</MudText>
+
+<MudButton Color="Color.Primary" OnClick="LoadPlaylists">Reload playlists</MudButton>
+<MudButton Color="Color.Primary" OnClick="@(() => {_formClass = "pa-4";})">Add playlist</MudButton>
+
+@if(_owners != null)
+{
+    <MudPaper Class="@_formClass">
+        <MudForm @ref="@_form" @bind-IsValid="@_success" @bind-Errors="@_errors">
+            <MudSelect @bind-Value="@_selectedOwner" Variant="Variant.Filled" Label="Select owner" Required="true" RequiredError="Owner is required" T="Owner" ToStringFunc="ow => ow?.DisplayName">
+                @foreach (var owner in _owners)
+                {
+                    <MudSelectItem Value="@owner">@owner.DisplayName</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!_success)" Class="ml-auto" OnClick="AddPlaylist">
+                @if (_loading)
+                {
+                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                    <MudText Class="ms-2">Searching</MudText>
+                }
+                else
+                {
+                    <MudText>Add</MudText>
+                }
+            </MudButton>
+            <MudButton Variant="Variant.Filled" OnClick="CloseFindPlaylistForm">Close from</MudButton>
+        </MudForm>
+    </MudPaper>
+}
+
+@if(_playlists != null && _owners != null)
+{
+    <MudDataGrid Items="@_playlists" Filterable="false" SortMode="SortMode.None" Hideable="true" Groupable="true" GroupExpanded="false">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">Playlists</MudText>
+            <MudSpacer />
+        </ToolBarContent>
+        <Columns>
+            <PropertyColumn Property="playlist => playlist.Id" Title="Id" Groupable="false" />
+            <PropertyColumn Property="playlist => playlist.Title" Title="Title" Groupable="false" />
+            <PropertyColumn Property="playlist => playlist.Url" Title="Url" Groupable="false" />
+            <TemplateColumn Title="Is tracked" Groupable="false">
+                <CellTemplate>
+                    <MudCheckBox Checked="@context.Item.IsBeingTracked" CheckedChanged="async (bool newValue) => {await ChangePlaylistIsTracking(context.Item, newValue);}"></MudCheckBox>
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="playlist => new OwnerGrouping(playlist.Owner.Id, playlist.Owner.DisplayName)" Title="Owner id" Hidden="true" Groupable="true" Grouping>
+                <GroupTemplate>
+                    <span style="font-weight:bold">Owner: @((context.Grouping.Key as OwnerGrouping)!.Name)</span>
+                </GroupTemplate>
+            </PropertyColumn>
+            <TemplateColumn Groupable="false">
+                <CellTemplate>
+                    <MudTooltip Text="Delete playlist" Arrow="true" Placement="Placement.Left">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
+                                   OnClick="@(() => StartPlaylistDelete(context.Item))">X</MudButton>
+                    </MudTooltip>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="VideoPlaylist" />
+        </PagerContent>
+    </MudDataGrid>
+}
+
+<MudDialog @bind-IsVisible="_playlistAdditionDialogVisible" Options="dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Add" Class="mr-3" /> Select a video album to add
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTable Items="@_playlistAddition.FoundPlaylists" Hover="true">
+            <HeaderContent>
+                <MudTh>Id</MudTh>
+                <MudTh>Title</MudTh>
+                <MudTh>Url</MudTh>
+                <MudTh></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Id">@context.Id</MudTd>
+                <MudTd DataLabel="Title">@context.Title</MudTd>
+                <MudTd DataLabel="Url">@context.Url</MudTd>
+                <MudTd>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
+                               OnClick="@(async () => await AddPlaylist(context.Id, context.Title, context.Url, _selectedOwner))">Add</MudButton>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="CloseDialog" Class="px-10">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+<MudDialog @bind-IsVisible="_deletionDialogVisible" Options="dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Delete" Class="mr-3" /> Delete playlist?
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText>Delete playlist "@_playlistToDelete!.Title"?</MudText>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="ConfirmDelete" Class="px-10">Yes</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="CancelDelete" Class="px-10">No</MudButton>
+    </DialogActions>
+</MudDialog>
+
+<style>
+    .my-custom-class {
+        backdrop-filter: blur(10px);
+    }
+</style>
+@code {
+    MudForm _form;
+    bool _success;
+    string[] _errors = { };
+    Owner _selectedOwner;
+    bool _loading;
+    string _formClass = "pa-4 invisible";
+
+    DialogOptions dialogOptions = new() { FullWidth = true, CloseButton = false, CloseOnEscapeKey = false, DisableBackdropClick = true, ClassBackground = "my-custom-class" };
+
+    IReadOnlyCollection<VideoPlaylist>? _playlists;
+    IReadOnlyCollection<Owner>? _owners;
+    VideoPlaylist? _playlistToDelete;
+    bool _deletionDialogVisible;
+
+    class PlaylistAddition
+    {
+        public required IReadOnlyCollection<VideoAlbumInfo> FoundPlaylists { get; set; }
+    }
+
+    record OwnerGrouping(string OwnerId, string Name);
+
+    PlaylistAddition? _playlistAddition;
+    bool _playlistAdditionDialogVisible;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPlaylists();
+    }
+
+    private async Task LoadPlaylists()
+    {
+        _loading = true;
+        StateHasChanged();
+        _owners = await _ownersService.GetOwners();
+        _playlists = await _playlistsService.GetPlaylists();
+
+        _loading = false;
+    }
+
+    private async Task AddPlaylist()
+    {
+        _loading = true;
+        var (token, validThrough) = await _accessTokenService.GetAccessToken();
+
+        if (validThrough < DateTimeOffset.Now)
+        {
+            _loading = false;
+            throw new Exception("Invalid token");
+        }
+
+        var vkClient = _vkRestClientBuilder
+            .WithAccessToken(token)
+            .Build();
+
+        var playlists = await vkClient.FindVideoAlbums(_selectedOwner.Id, _selectedOwner.OwnerType.ToVk());
+        ShowAddPlaylistsDialog(playlists);
+    }
+
+    private async Task CloseFindPlaylistForm()
+    {
+        _formClass = "pa-4 invisible";
+        await _form.ResetAsync();
+    }
+
+    private void ShowAddPlaylistsDialog(IReadOnlyCollection<VideoAlbumInfo> playlists)
+    {
+        _playlistAddition = new PlaylistAddition
+        {
+            FoundPlaylists = playlists
+        };
+        _playlistAdditionDialogVisible = true;
+    }
+
+    private async Task CloseDialog()
+    {
+        _playlistAdditionDialogVisible = false;
+        _playlistAddition = null;
+        _loading = false;
+        await CloseFindPlaylistForm();
+    }
+
+    private async Task AddPlaylist(string id, string title, string url, Owner owner)
+    {
+        await _playlistsService.AddPlaylist(owner.Id, id, title, url);
+        _snackbar.Add($"Playlist {id} added to owner {owner.Id}", Severity.Success);
+    }
+
+    private async Task ChangePlaylistIsTracking(VideoPlaylist playlist, bool newValue)
+    {
+        await _playlistsService.UpdatePlaylistTracking(playlist.Id, newValue);
+        await LoadPlaylists();
+    }
+
+    private void StartPlaylistDelete(VideoPlaylist playlist)
+    {
+        _playlistToDelete = playlist;
+        _deletionDialogVisible = true;
+    }
+
+    private async Task ConfirmDelete()
+    {
+        await _playlistsService.DeletePlaylist(_playlistToDelete!.Id);
+        CancelDelete();
+        await LoadPlaylists();
+        _snackbar.Add("Playlist deleted", Severity.Success);
+    }
+
+    private void CancelDelete()
+    {
+        _playlistToDelete = null;
+        _deletionDialogVisible = false;
+    }
+}

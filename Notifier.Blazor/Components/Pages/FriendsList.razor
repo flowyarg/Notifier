@@ -1,0 +1,79 @@
+﻿@page "/friendsList"
+@using Notifier.Blazor.Controllers
+@using Notifier.Blazor.Helpers
+@using Notifier.Blazor.Helpers.Routes
+@using Notifier.Logic.Services
+@using Notifier.Vk.Contract
+@using Notifier.Vk.Models
+@inject AccessTokenService _accessTokenService
+@inject IVkRestClientBuilder _vkRestClientBuilder
+@inject NavigationManager _navigationManager
+
+<PageTitle> @(_userId != null ? $"Friends list of {_userId}" : "User info")</PageTitle>
+<MudText Typo="Typo.h3">Friends list</MudText>
+
+<MudTextField T="string" Label="Enter user id:" Variant="Variant.Text" @bind-Value="_userId" />
+<MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="LoadUserFriends">Get user friends</MudButton>
+
+@if (_friendsList != null)
+{
+    <MudTable Items="@_friendsList" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info">
+        <ToolBarContent>
+            <MudText Typo="Typo.h4">Friends of @_userId</MudText>
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh>Id</MudTh>
+            <MudTh>Name</MudTh>
+            <MudTh>Date of birth</MudTh>
+            <MudTh>City</MudTh>
+            <MudTh>Last seen</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Id">@context.Id</MudTd>
+            <MudTd DataLabel="Name">@context.FirstName @context.LastName</MudTd>
+            <MudTd DataLabel="Date of birth">
+                @if(context.BirthDate?.Year == null)
+                {
+                    <MudText Class="ms-2">@context.BirthDate?.ToDateTimeOffset().ToString("dd.MM")</MudText>
+                }
+                else
+                {
+                    <MudText Class="ms-2">@context.BirthDate?.ToDateTimeOffset().ToString("dd.MM.yyyy")</MudText>
+                }
+            </MudTd>
+            <MudTd DataLabel="City">@(context.City?.Title ?? "")</MudTd>
+            <MudTd DataLabel="Last seen">@context.LastSeen?.Time?.ToString("dd.MM.yyyy HH:mm:ss") from @context.LastSeen?.Platform</MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    string? _userId;
+    bool _loading;
+    IReadOnlyCollection<UserInfo>? _friendsList;
+
+    private async Task LoadUserFriends()
+    {
+        if (string.IsNullOrEmpty(_userId))
+        {
+            return;
+        }
+
+        _loading = true;
+
+        var (token, validThrough) = await _accessTokenService.GetAccessToken();
+
+        if (validThrough < DateTimeOffset.Now)
+        {
+            _loading = false;
+            throw new Exception("Invalid token");
+        }
+
+        using var client = _vkRestClientBuilder
+            .WithAccessToken(token)
+            .Build();
+
+        _friendsList = await client.GetFriends(_userId);
+        _loading = false;
+    }
+}

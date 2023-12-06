@@ -361,3 +361,9 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+#Custom
+docker-compose.yml
+/Notifier.Blazor/appsettings.Development.json
+/Notifier.DataAccess/NotifierDbContextDesignFactory.cs
+/Notifier.Blazor/docker.txt

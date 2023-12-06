@@ -1,0 +1,62 @@
+﻿@page "/videos"
+@using Notifier.Logic.Models
+@using Notifier.Logic.Services
+@inject VideosService _videosService
+@inject NavigationManager _navigationManager
+@inject IJSRuntime _jsRuntime;
+
+<PageTitle>Videos</PageTitle>
+<MudText Typo="Typo.h3">Videos</MudText>
+
+<MudButton Color="Color.Primary" OnClick="LoadVideos">Reload videos</MudButton>
+
+@if (_videos != null)
+{
+    <MudDataGrid Items="@_videos" SortMode="SortMode.None" Loading="@_loading" Hideable="true" Groupable="false" GroupExpanded="false">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">Videos</MudText>
+            <MudSpacer />
+        </ToolBarContent>
+        <Columns>
+            <PropertyColumn Property="video => video.Id" Title="Id" />
+            <PropertyColumn Property="video => video.Title" Title="Title" />
+            <PropertyColumn Property="video => video.Duration" Title="Duration" />
+            <PropertyColumn Property="video => video.PublicationDate" Title="Publication date" />
+            <TemplateColumn>
+                <CellTemplate>
+                    <MudLink OnClick=@(async () => { await _jsRuntime.InvokeVoidAsync("open", context.Item.Url, "_blank"); })>
+                        <MudTooltip>
+                            <ChildContent>
+                                <MudText>@context.Item.Title</MudText>
+                            </ChildContent>
+                            <TooltipContent>
+                                <MudImage Src="@context.Item.PreviewUrl" Height="100" />
+                            </TooltipContent>
+                        </MudTooltip>
+                    </MudLink>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="VideoInfo" />
+        </PagerContent>
+    </MudDataGrid>
+}
+
+@code {
+    bool _loading;
+    IReadOnlyCollection<VideoInfo>? _videos;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadVideos();
+    }
+
+    private async Task LoadVideos()
+    {
+        _loading = true;
+        StateHasChanged();
+        _videos = await _videosService.GetVideos();
+        _loading = false;
+    }
+}

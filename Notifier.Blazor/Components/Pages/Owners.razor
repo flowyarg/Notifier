@@ -1,0 +1,295 @@
+﻿@page "/owners"
+@using Notifier.Blazor.Helpers
+@using Notifier.Logic.Models
+@using Notifier.Logic.Services
+@using Notifier.Telegram
+@using Notifier.Vk.Contract
+@using Notifier.Vk.Models
+@inject AccessTokenService _accessTokenService
+@inject OwnersService _ownersService
+@inject IVkRestClientBuilder _vkRestClientBuilder
+@inject ISnackbar _snackbar
+@inject NavigationManager _navigationManager
+
+<PageTitle>Owners</PageTitle>
+<MudText Typo="Typo.h3">Owners</MudText>
+
+<MudButton Color="Color.Primary" OnClick="LoadOwners">Reload owners</MudButton>
+<MudButton Color="Color.Primary" OnClick="@(() => {_formClass = "pa-4";})">Add owner</MudButton>
+
+<MudPaper Class="@_formClass">
+    <MudForm @ref="@_form" @bind-IsValid="@_success" @bind-Errors="@_errors">
+        <MudTextField T="string" @bind-Value=@_newOwner.Query Label="Query" Required="true" RequiredError="Query is required" />
+        <MudRadioGroup @bind-SelectedOption=@_newOwner.Type Required="true" RequiredError="Type is required">
+            <MudRadio Option="@("Group")" Color="Color.Primary">Group</MudRadio>
+            <MudRadio Option="@("User")" Color="Color.Primary">User</MudRadio>
+        </MudRadioGroup>
+
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!_success)" Class="ml-auto" OnClick="AddOwner">
+            @if (_loading)
+            {
+                <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                <MudText Class="ms-2">Searching</MudText>
+            }
+            else
+            {
+                <MudText>Add</MudText>
+            }
+        </MudButton>
+        <MudButton Variant="Variant.Filled" OnClick="CloseFindOwnerForm">Close from</MudButton>
+    </MudForm>
+</MudPaper>
+
+@if (_owners != null)
+{
+    <MudTable Items="@_owners" Hover="true" Loading="@_loading" LoadingProgressColor="Color.Info">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">List of stored owners</MudText>
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh>Id</MudTh>
+            <MudTh>Name</MudTh>
+            <MudTh>Url</MudTh>
+            <MudTh>Is user or group</MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Id">@context.Id</MudTd>
+            <MudTd DataLabel="Name">@context.DisplayName</MudTd>
+            <MudTd DataLabel="Url">@context.Url</MudTd>
+            <MudTd DataLabel="Is user or group">@context.OwnerType</MudTd>
+            <MudTd>
+                <MudTooltip Text="Delete owner" Arrow="true" Placement="Placement.Left">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
+                               OnClick="@(() => StartOwnerDelete(context))">X</MudButton>
+                </MudTooltip>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+
+    <MudDialog @bind-IsVisible="_deletionDialogVisible" Options="dialogOptions">
+        <TitleContent>
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.Delete" Class="mr-3" /> Delete owner?
+            </MudText>
+        </TitleContent>
+        <DialogContent>
+            <MudText>Delete @_ownerToDelete!.OwnerType "@_ownerToDelete!.DisplayName"?</MudText>
+        </DialogContent>
+        <DialogActions>
+            <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="ConfirmDelete" Class="px-10">Yes</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="CancelDelete" Class="px-10">No</MudButton>
+        </DialogActions>
+    </MudDialog>
+
+    <MudDialog @bind-IsVisible="_userAdditionDialogVisible" Options="dialogOptions">
+         <TitleContent>
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.Add" Class="mr-3" /> Select a user to add
+            </MudText>
+            </TitleContent>
+            <DialogContent>
+            <MudTable Items="@_userAddition.FoundUsers" Hover="true">
+                <HeaderContent>
+                    <MudTh>Id</MudTh>
+                    <MudTh>First name</MudTh>
+                    <MudTh>Last name</MudTh>
+                    <MudTh>Url</MudTh>
+                    <MudTh></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Id">@context.Id</MudTd>
+                    <MudTd DataLabel="First name">@context.FirstName</MudTd>
+                    <MudTd DataLabel="Last name">@context.LastName</MudTd>
+                    <MudTd DataLabel="Url">@context.Url</MudTd>
+                    <MudTd>
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
+                                   OnClick="@(async () => await AddUser(context))">Add</MudButton>
+                    </MudTd>
+                </RowTemplate>
+              </MudTable>
+            </DialogContent>
+            <DialogActions>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="CloseDialog" Class="px-10">Close</MudButton>
+            </DialogActions>
+    </MudDialog>
+
+    <MudDialog @bind-IsVisible="_groupAdditionDialogVisible" Options="dialogOptions">
+        <TitleContent>
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.Add" Class="mr-3" /> Select a group to add
+            </MudText>
+        </TitleContent>
+        <DialogContent>
+            <MudTable Items="@_groupAddition.FoundGroups" Hover="true">
+                <HeaderContent>
+                    <MudTh>Id</MudTh>
+                    <MudTh>Name</MudTh>
+                    <MudTh>Url</MudTh>
+                    <MudTh></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Id">@context.Id</MudTd>
+                    <MudTd DataLabel="Name">@context.Name</MudTd>
+                    <MudTd DataLabel="Url">@context.Url</MudTd>
+                    <MudTd>
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
+                                   OnClick="@(async () => await AddGroup(context))">Add</MudButton>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        </DialogContent>
+        <DialogActions>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="CloseDialog" Class="px-10">Close</MudButton>
+        </DialogActions>
+    </MudDialog>
+}
+<style>
+    .my-custom-class {
+        backdrop-filter: blur(10px);
+    }
+</style>
+
+@code {
+    MudForm _form;
+    bool _success;
+    string[] _errors = { };
+    bool _loading;
+    string _formClass = "pa-4 invisible";
+
+    DialogOptions dialogOptions = new() { FullWidth = true, CloseButton = false, CloseOnEscapeKey = false, DisableBackdropClick = true, ClassBackground = "my-custom-class" };
+
+    class NewOwnerQuery
+    {
+        public string? Query { get; set; }
+        public string? Type { get; set; }
+    }
+
+    class UserAddition
+    {
+        public required IReadOnlyCollection<UserInfo> FoundUsers { get; set; }
+    }
+
+    class GroupAddition
+    {
+        public required IReadOnlyCollection<GroupInfo> FoundGroups { get; set; }
+    }
+
+    Owner? _ownerToDelete;
+    bool _deletionDialogVisible;
+
+    NewOwnerQuery _newOwner = new();
+
+    UserAddition? _userAddition;
+    bool _userAdditionDialogVisible;
+    GroupAddition? _groupAddition;
+    bool _groupAdditionDialogVisible;
+
+    IReadOnlyCollection<Owner>? _owners;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadOwners();
+    }
+
+    private async Task LoadOwners()
+    {
+        _loading = true;
+        StateHasChanged();
+        _owners = await _ownersService.GetOwners();
+        _loading = false;
+    }
+
+    private void StartOwnerDelete(Owner owner)
+    {
+        _ownerToDelete = owner;
+        _deletionDialogVisible = true;
+    }
+
+    private async Task ConfirmDelete()
+    {
+        await _ownersService.DeleteOwner(_ownerToDelete!.Id);
+        CancelDelete();
+        await LoadOwners();
+        _snackbar.Add("Owner deleted", Severity.Success);
+    }
+
+    private void CancelDelete()
+    {
+        _ownerToDelete = null;
+        _deletionDialogVisible = false;
+    }
+
+    private async Task AddOwner()
+    {
+        _loading = true;
+        var (token, validThrough) = await _accessTokenService.GetAccessToken();
+
+        if (validThrough < DateTimeOffset.Now)
+        {
+            _loading = false;
+            throw new Exception("Invalid token");
+        }
+
+        var vkClient = _vkRestClientBuilder
+            .WithAccessToken(token)
+            .Build();
+
+        if (_newOwner.Type == "User")
+        {
+            var foundUsers = await vkClient.FindUsers(_newOwner.Query!);
+            ShowAddUserDialog(foundUsers);
+        }
+        if (_newOwner.Type == "Group")
+        {
+            var foundGroups = await vkClient.FindGroups(_newOwner.Query!);
+            ShowAddGroupsDialog(foundGroups);
+        }
+    }
+
+    private async Task CloseFindOwnerForm()
+    {
+        _formClass = "pa-4 invisible";
+        await _form.ResetAsync();
+    }
+
+    private void ShowAddUserDialog(IReadOnlyCollection<UserInfo> users)
+    {
+        _userAddition = new UserAddition
+        {
+            FoundUsers = users
+        };
+        _userAdditionDialogVisible = true;
+    }
+
+    private void ShowAddGroupsDialog(IReadOnlyCollection<GroupInfo> groups)
+    {
+        _groupAddition = new GroupAddition
+        {
+            FoundGroups = groups
+        };
+        _groupAdditionDialogVisible = true;
+    }
+
+    private async Task CloseDialog()
+    {
+        _userAdditionDialogVisible = false;
+        _groupAdditionDialogVisible = false;
+        _userAddition = null;
+        _groupAddition = null;
+        _loading = false;
+        await CloseFindOwnerForm();
+    }
+
+    private async Task AddUser(UserInfo user)
+    {
+        await _ownersService.AddUser(user.Id, user.FirstName, user.LastName, user.Url);
+        _snackbar.Add($"User {user.FirstName} {user.LastName} added", Severity.Success);
+    }
+
+    private async Task AddGroup(GroupInfo group)
+    {
+        await _ownersService.AddGroup(group.Id, group.Name, group.Url);
+        _snackbar.Add($"Group {group.Name} added", Severity.Success);
+    }
+}

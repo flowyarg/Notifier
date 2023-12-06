@@ -1,0 +1,78 @@
+﻿@page "/tokens"
+@using Notifier.Blazor.Controllers
+@using Notifier.Blazor.Helpers
+@using Notifier.Blazor.Helpers.Routes
+@using Notifier.Blazor.Selenium
+@using Notifier.Logic.Services
+@inject AccessTokenService _accessTokenService
+@inject NavigationManager _navigationManager
+@inject TokenRefreshmentJob _tokenService
+@inject ISnackbar _snackbar
+
+<PageTitle>Tokens page</PageTitle>
+<MudText Typo="Typo.h3">Tokens page</MudText>
+@if (_isValid)
+{
+    <MudText Color="Color.Success">Token is valid</MudText>
+    <MudText>Valid through: @_validThrough</MudText>
+    <MudText>Valid for @CalculateTimeDiff(_validThrough)</MudText>
+}
+else
+{
+    <MudText Color="Color.Error">Token is invalid</MudText>
+    <MudButton OnClick="DoAuthentication" Color="Color.Primary" Variant="Variant.Filled">Update token</MudButton>
+}
+<MudButton OnClick="DoAuthentication" Color="Color.Primary" Variant="Variant.Filled">Update token</MudButton>
+
+@code {
+    bool _isValid;
+    DateTimeOffset? _validThrough;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var (_, validThrough) = await _accessTokenService.GetAccessToken();
+            _validThrough = validThrough;
+            _isValid = _validThrough > DateTimeOffset.Now;
+        }
+        catch
+        {
+            _isValid = false;
+            _validThrough = null;
+        }      
+    }
+
+    private async Task DoAuthentication()
+    {
+        try
+        {
+            await _tokenService.Invoke();
+            _snackbar.Add("Authentication successful", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            _snackbar.Add($"Authentication error: {ex}", Severity.Error);
+            throw;
+        }
+    }
+
+    private string CalculateTimeDiff(DateTimeOffset? dateTime)
+    {
+        if (dateTime == null)
+        {
+            return "none";
+        }
+        return (dateTime - DateTimeOffset.Now) switch
+        {
+            { Days: var days } when days > 0 => "more than a day",
+            { Hours: var hours } when hours == 1 => "1 hour",
+            { Hours: var hours } when hours > 0 => $"{hours} hours",
+            { Minutes: var minutes } when minutes == 1 => "1 minute",
+            { Minutes: var minutes } when minutes > 0 => $"{minutes} minutes",
+            { Seconds: var seconds } when seconds == 1 => "1 second",
+            { Seconds: var seconds } when seconds > 0 => $"{seconds} seconds",
+            _ => "none"
+        };
+    }
+}
