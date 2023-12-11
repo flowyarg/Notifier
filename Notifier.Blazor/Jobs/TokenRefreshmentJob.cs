@@ -1,5 +1,4 @@
-﻿using Coravel.Invocable;
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Options;
 using Notifier.Blazor.Settings;
 using Notifier.Logic.Services;
 using Notifier.Vk.Contract;
@@ -7,9 +6,9 @@ using OpenQA.Selenium;
 using OpenQA.Selenium.Support.UI;
 using SeleniumExtras.WaitHelpers;
 
-namespace Notifier.Blazor.Selenium
+namespace Notifier.Blazor.Jobs
 {
-    internal class TokenRefreshmentJob : IInvocable
+    internal class TokenRefreshmentJob : Job<TokenRefreshmentJob>
     {
         private const string _loginInput = "input[name='login']";
         private const string _submitButton = "button[type='submit']";
@@ -32,7 +31,9 @@ namespace Notifier.Blazor.Selenium
             IVkAuthenticationRestClientBuilder authenticationClientBuilder,
             AccessTokenService accessTokenService,
             IOptions<VkApiSettings> apiSettings,
-            Lazy<IWebDriver> chromeDriver)
+            Lazy<IWebDriver> chromeDriver,
+            ILogger<TokenRefreshmentJob> logger)
+            : base(logger)
         {
             _authenticationClientBuilder = authenticationClientBuilder;
             _accessTokenService = accessTokenService;
@@ -40,7 +41,7 @@ namespace Notifier.Blazor.Selenium
             _chromeDriver = chromeDriver;
         }
 
-        public async Task Invoke()
+        protected override async Task Run()
         {
             var (_, validThrough) = await _accessTokenService.GetAccessToken();
 
@@ -48,6 +49,8 @@ namespace Notifier.Blazor.Selenium
             {
                 return;
             }
+
+            _logger.LogInformation("Starting to refresh Vk token");
 
             using var driver = _chromeDriver.Value;
 
@@ -101,6 +104,8 @@ namespace Notifier.Blazor.Selenium
             var token = await authenticationClient.GetAccessToken(code);
 
             await _accessTokenService.StoreAccessToken(token.Token, token.ExpiresIn);
+
+            _logger.LogInformation("Vk token stored, valid for {Time}", TimeSpan.FromSeconds(token.ExpiresIn));
         }
     }
 }

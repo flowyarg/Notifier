@@ -16,17 +16,20 @@ namespace Notifier.Telegram.Implementation.Command
 
         private readonly PlaylistsService _playlistsService;
         protected readonly PlaylistSubscriptionService _playlistSubscriptionService;
+        private readonly string _command;
         protected readonly CommandContextStore? _commandContextStore;
         protected SubscriptionCommandHandler(
             ITelegramRestClient telegramClient,
             PlaylistsService playlistsService,
             PlaylistSubscriptionService playlistSubscriptionService,
             ILogger<T> logger,
+            string command,
             CommandContextStore? commandContextStore = null)
             : base(telegramClient, logger)
         {
             _playlistsService = playlistsService;
             _playlistSubscriptionService = playlistSubscriptionService;
+            _command = command;
             _commandContextStore = commandContextStore;
         }
 
@@ -69,6 +72,8 @@ namespace Notifier.Telegram.Implementation.Command
 
         public override async Task HandleReply(long chatId, Message message)
         {
+            _logger.LogInformation("{command} command reply received", _command);
+
             if (message.Text == _stopCommandOption)
             {
                 await HandleReplyEndCommand(chatId);
@@ -83,6 +88,8 @@ namespace Notifier.Telegram.Implementation.Command
             }
 
             await HandleReplySubscription(chatId, message.Id, message.Text!);
+
+            _logger.LogInformation("{command} command reply handled", _command);
         }
 
         protected virtual Task HandleReplySubscription(long chatId, int messageId, string playlistName)

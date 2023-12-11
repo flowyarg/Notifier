@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Notifier.Telegram.Contract;
 using Notifier.Telegram.Model;
@@ -17,9 +18,13 @@ namespace Notifier.Telegram.Implementation
             NullValueHandling = NullValueHandling.Ignore
         };
 
-        public TelegramRestClient(IOptions<TelegramApiSettings> apiSettings)
+        private readonly ILogger<TelegramRestClient> _logger;
+
+        public TelegramRestClient(IOptions<TelegramApiSettings> apiSettings, ILogger<TelegramRestClient> logger)
           : base(new RestClientOptions($"https://api.telegram.org/bot{apiSettings.Value.AccessToken}"))
-        { }
+        {
+            _logger = logger;
+        }
 
         public async Task<IReadOnlyCollection<In.Update>> GetUpdates(int timeout = 0, int limit = 100, int? offset = null)
         {
@@ -71,12 +76,12 @@ namespace Notifier.Telegram.Implementation
             try
             {
                 var response = await this.GetAsync(request);
-
+                _logger.LogInformation("Request to {Url} executed", request.Resource);
                 return JsonConvert.DeserializeObject<TResponse>(response.Content!);
             }
             catch (Exception ex)
             {
-                var msg = ex.Message;
+                _logger.LogWarning(ex, "Request to {Url} failed", request.Resource);
                 throw;
             }
         }

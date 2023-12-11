@@ -1,18 +1,18 @@
-﻿using Coravel.Invocable;
-using Notifier.Telegram.Contract;
+﻿using Notifier.Telegram.Contract;
 
 namespace Notifier.Blazor.Jobs
 {
-    public class TelegramBotRunnerJob : IInvocable
+    internal class TelegramBotRunnerJob : Job<TelegramBotRunnerJob>
     {
         private readonly ITelegramBotUpdatesService _telegramBotService;
 
-        public TelegramBotRunnerJob(ITelegramBotUpdatesService telegramBotService)
+        public TelegramBotRunnerJob(ITelegramBotUpdatesService telegramBotService, ILogger<TelegramBotRunnerJob> logger)
+            : base(logger) 
         {
             _telegramBotService = telegramBotService;
         }
 
-        public async Task Invoke()
+        protected override async Task Run()
         {
             await _telegramBotService.HandleUpdates();
         }

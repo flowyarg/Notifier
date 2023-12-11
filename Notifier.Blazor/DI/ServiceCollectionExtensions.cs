@@ -2,7 +2,6 @@
 using Microsoft.EntityFrameworkCore;
 using Notifier.Blazor.Helpers;
 using Notifier.Blazor.Jobs;
-using Notifier.Blazor.Selenium;
 using Notifier.Blazor.Settings;
 using Notifier.DataAccess;
 using Notifier.Logic.Services;
@@ -11,6 +10,7 @@ using Notifier.Telegram.Settings;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Remote;
+using System.Diagnostics;
 
 namespace Notifier.Blazor.DI
 {
@@ -43,6 +43,11 @@ namespace Notifier.Blazor.DI
         {
             provider.UseScheduler(scheduler =>
             {
+                scheduler.Schedule<TokenRefreshmentJob>()
+                    .EveryTenMinutes()
+                    .RunOnceAtStart()
+                    .PreventOverlapping(nameof(TokenRefreshmentJob));
+
                 scheduler.Schedule<SyncPlaylistsJob>()
                     .Hourly()
                     .RunOnceAtStart()
@@ -50,13 +55,7 @@ namespace Notifier.Blazor.DI
 
                 scheduler.Schedule<TelegramBotRunnerJob>()
                     .EverySeconds(15)
-                    .RunOnceAtStart()
                     .PreventOverlapping(nameof(TelegramBotRunnerJob));
-
-                scheduler.Schedule<TokenRefreshmentJob>()
-                    .EveryTenMinutes()
-                    .RunOnceAtStart()
-                    .PreventOverlapping(nameof(TokenRefreshmentJob));
             });
         }
 
@@ -75,8 +74,8 @@ namespace Notifier.Blazor.DI
             chromeOptions.AddArgument("--window-size=1920,1080");
             chromeOptions.AddArgument("--enable-javascript");
 
-            // var seleniumUrl = $"http://{(Debugger.IsAttached ? "host.docker.internal:4445" : "expressvpn:4444")}/wd/hub";
-            var seleniumUrl = "http://localhost:4445/wd/hub";
+             var seleniumUrl = $"http://{(Debugger.IsAttached ? "host.docker.internal:4445" : "selenium.standalone:4444")}/wd/hub";
+            //var seleniumUrl = "http://localhost:4445/wd/hub";
             return new RemoteWebDriver(new Uri(seleniumUrl), chromeOptions);
         }
 

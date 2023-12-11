@@ -18,6 +18,8 @@ namespace Notifier.Telegram.Implementation.Command
 
         public override async Task Handle(long chatId, string parameters)
         {
+            _logger.LogInformation("{command} command received", Command);
+
             await _helpCommandHandler.Handle(chatId, parameters);
 
             _logger.LogInformation("{command} command handled", Command);

@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Notifier.Logic.Services;
 using Notifier.Telegram.Contract;
-using Notifier.Telegram.Contract.Command;
 using Notifier.Telegram.Helpers;
 
 namespace Notifier.Telegram.Implementation.Command
@@ -21,6 +20,8 @@ namespace Notifier.Telegram.Implementation.Command
 
         public override async Task Handle(long chatId, string parameters)
         {
+            _logger.LogInformation("{command} command received", Command);
+
             var playlists = await _playlistsService.GetPlaylists();
 
             var replyMessageBuilder = TelegramResponseMessageBuilder

@@ -24,7 +24,7 @@ namespace Notifier.Telegram.Services.Handlers
 
         protected override async Task<bool> HandleInternal(Update update)
         {
-            return true;
+            return await Task.FromResult(true);
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Notifier.Vk.Contract;
 using Notifier.Vk.Models;
 using RestSharp;
@@ -14,7 +15,9 @@ namespace Notifier.Vk.Implementation
         private const string _vkPlaylistBaseUrlFormat = "https://vk.com/video/playlist/{0}_{1}";
         private const string _vkBaseUrlFormat = "https://vk.com/{0}";
 
-        public VkRestClient(string accessToken)
+        private readonly ILogger<VkRestClient> _logger;
+
+        public VkRestClient(string accessToken, ILogger<VkRestClient> logger)
             : base(
                   new RestClientOptions(_apiEndpoint)
                   {
@@ -22,6 +25,7 @@ namespace Notifier.Vk.Implementation
                   })
         {
             DefaultParameters.AddParameter(new QueryParameter("v", _apiVersion));
+            _logger = logger;
         }
 
         public async Task<IReadOnlyCollection<GroupInfo>> FindGroups(string searchString, int count = 10)
@@ -136,12 +140,12 @@ namespace Notifier.Vk.Implementation
             try
             {
                 var response = await this.GetAsync(request);
-
+                _logger.LogInformation("Request to {Url} executed", request.Resource);
                 return JsonConvert.DeserializeObject<TResponse>(response.Content!);
             }
             catch (Exception ex)
             {
-                var msg = ex.Message;
+                _logger.LogWarning(ex, "Request to {Url} failed", request.Resource);
                 throw;
             }
         }

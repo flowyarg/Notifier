@@ -15,11 +15,13 @@ namespace Notifier.Telegram.Implementation.Command
             PlaylistsService playlistsService,
             PlaylistSubscriptionService playlistSubscriptionService,
             ILogger<SubscribeAllCommandHandler> logger)
-            : base(telegramClient, playlistsService, playlistSubscriptionService, logger)
+            : base(telegramClient, playlistsService, playlistSubscriptionService, logger, Command)
         {}
 
         public override async Task Handle(long chatId, string parameters)
         {
+            _logger.LogInformation("{command} command received", Command);
+
             var missingPlaylists = await GetMissingPlaylists(chatId);
 
             await _playlistSubscriptionService.SubscribeTo(chatId, missingPlaylists.Select(playlist => playlist.Title).ToArray(), DateTimeOffset.Now);

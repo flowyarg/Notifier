@@ -7,7 +7,7 @@ using Notifier.Vk.Contract;
 
 namespace Notifier.Blazor.Jobs
 {
-    public class SyncPlaylistsJob : IInvocable
+    internal class SyncPlaylistsJob : Job<SyncPlaylistsJob>
     {
         private readonly AccessTokenService _accessTokenService;
         private readonly PlaylistsService _playlistsService;
@@ -20,7 +20,9 @@ namespace Notifier.Blazor.Jobs
             PlaylistsService playlistsService,
             VideosService videosService,
             IVkRestClientBuilder vkRestClientBuilder,
-            IQueue queue)
+            IQueue queue,
+            ILogger<SyncPlaylistsJob> logger)
+            : base(logger)
         {
             _accessTokenService = accessTokenService;
             _playlistsService = playlistsService;
@@ -29,7 +31,7 @@ namespace Notifier.Blazor.Jobs
             _queue = queue;
         }
 
-        public async Task Invoke()
+        protected override async Task Run()
         {
             var playlistsToSync = await _playlistsService.GetTrackedPlaylists();
 
@@ -48,6 +50,8 @@ namespace Notifier.Blazor.Jobs
             using var vkClient = _vkRestClientBuilder
                 .WithAccessToken(accessToken)
                 .Build();
+
+            _logger.LogInformation("Starting to sync {Count} playlists", playlistsToSync.Count);
 
             foreach (var playlist in playlistsToSync)
             {
@@ -82,12 +86,14 @@ namespace Notifier.Blazor.Jobs
                     ));
                 }
 
-                if (videosToAdd.Count == 0) 
+                if (videosToAdd.Count == 0)
                 {
                     continue;
                 }
 
                 await _videosService.AddVideos(videosToAdd, playlist.Owner.Id, playlist.Id);
+
+                _logger.LogInformation("{Count} videos added to playlist {Playlist}", videosToAdd.Count, playlist.Title);
 
                 _queue.QueueInvocableWithPayload<PlaylistNotificationJob, (string OwnerId, string PlaylistId)>((playlist.Owner.Id, playlist.Id));
             }

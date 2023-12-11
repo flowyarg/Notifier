@@ -17,11 +17,13 @@ namespace Notifier.Telegram.Implementation.Command
             PlaylistSubscriptionService playlistSubscriptionService,
             CommandContextStore commandContextStore,
             ILogger<UnsubscribeCommandHandler> logger)
-            : base(telegramClient, playlistsService, playlistSubscriptionService, logger, commandContextStore)
+            : base(telegramClient, playlistsService, playlistSubscriptionService, logger, Command, commandContextStore)
         {}
 
         public override async Task Handle(long chatId, string parameters)
         {
+            _logger.LogInformation("{command} command received", Command);
+
             var existingPlaylists = await GetExistingPlaylists(chatId);
 
             var replyKeyboard = CreateReplyKeyboard(existingPlaylists);
@@ -37,7 +39,7 @@ namespace Notifier.Telegram.Implementation.Command
             await SendMessage(messageToSend);
             _commandContextStore!.StartCommandContext(chatId, Command);
 
-            _logger.LogInformation("{command} command handled", Command);
+            _logger.LogInformation("{command} command handled (command context started)", Command);
         }
 
         protected override async Task HandleReplySubscription(long chatId, int messageId, string playlistName)

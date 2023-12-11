@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Notifier.DataAccess;
-using Notifier.DataAccess.Migrations;
 using Notifier.DataAccess.Model;
 using Model = Notifier.Logic.Models;
 

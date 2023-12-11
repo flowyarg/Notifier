@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Notifier.DataAccess;
 using Notifier.DataAccess.Model;
-using System.Linq;
 
 namespace Notifier.Logic.Services
 {
@@ -27,7 +26,7 @@ namespace Notifier.Logic.Services
         public async Task SubscribeTo(long chatId, string playlistTitle, DateTimeOffset? fromDate = null)
         {
             using var context = _factory.CreateDbContext();
-            
+
             var realPlaylist = await context.Playlists.SingleAsync(playlist => playlist.Title == playlistTitle);
 
             context.Subscriptions.Add(new PlaylistSubscription
@@ -77,27 +76,19 @@ namespace Notifier.Logic.Services
 
         public async Task UnsubscribeFrom(long chatId, IReadOnlyCollection<string> playlistTitles)
         {
-            try
-            {
-                using var context = _factory.CreateDbContext();
-                var realPlaylists = await context.Playlists.Where(playlist => playlistTitles.Contains(playlist.Title)).ToArrayAsync();
+            using var context = _factory.CreateDbContext();
+            var realPlaylists = await context.Playlists.Where(playlist => playlistTitles.Contains(playlist.Title)).ToArrayAsync();
 
-                var realPlaylistIds = realPlaylists.Select(playlist => playlist.Id).ToArray();
+            var realPlaylistIds = realPlaylists.Select(playlist => playlist.Id).ToArray();
 
-                var subscriptions = await context.Subscriptions
-                    .Where(subscription => subscription.SubscriberChatId == chatId)
-                    .Where(subscription => realPlaylistIds.Contains(subscription.Playlist.Id))
-                    .ToArrayAsync();
+            var subscriptions = await context.Subscriptions
+                .Where(subscription => subscription.SubscriberChatId == chatId)
+                .Where(subscription => realPlaylistIds.Contains(subscription.Playlist.Id))
+                .ToArrayAsync();
 
-                context.Subscriptions.RemoveRange(subscriptions);
+            context.Subscriptions.RemoveRange(subscriptions);
 
-                await context.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                var ttttt = ex;
-                throw;
-            }
+            await context.SaveChangesAsync();
         }
 
         public async Task<IReadOnlyCollection<(long ChatId, DateTimeOffset? LastSyncDate)>> GetSubscribers(string playlistId)

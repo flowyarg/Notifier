@@ -58,7 +58,7 @@ namespace Notifier.Telegram.Services.Handlers
                 await handler.Handle(update.Message!.Chat.Id, commandParameters);
                 return true;
             }
-            catch (KeyNotFoundException ex)
+            catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Command handling error");
                 return false;

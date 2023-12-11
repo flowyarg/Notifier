@@ -26,6 +26,8 @@ namespace Notifier.Telegram.Implementation.Command
 
         public override async Task Handle(long chatId, string parameters)
         {
+            _logger.LogInformation("{command} command received", Command);
+
             var playlists = await _playlistsService.GetPlaylists();
 
             var existingSubscriptionUrls = await _playlistSubscriptionService.GetSubscriptionUrls(chatId);

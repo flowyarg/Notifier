@@ -3,6 +3,7 @@ using MudBlazor;
 using MudBlazor.Services;
 using Notifier.Blazor.Components;
 using Notifier.Blazor.DI;
+using Notifier.Blazor.Helpers;
 using Notifier.DataAccess.DI;
 using Notifier.Logic.DI;
 using Notifier.Telegram.DI;
@@ -42,6 +43,12 @@ builder.Services.AddLogicServices(builder.Configuration);
 builder.Services.AddVkApiServices(builder.Configuration);
 builder.Services.AddTelegramApiServices(builder.Configuration);
 
+//builder.Logging.AddCustomFormatter(configure =>
+//{
+//    configure.ColorBehavior = Microsoft.Extensions.Logging.Console.LoggerColorBehavior.Enabled;
+//    configure.CustomPrefix = "Test";
+//});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -49,7 +56,7 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    app.UseHsts();
+    //app.UseHsts();
 }
 
 app.UseHttpsRedirection();

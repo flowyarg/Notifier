@@ -1,10 +1,17 @@
-﻿using Notifier.Vk.Contract;
+﻿using Microsoft.Extensions.Logging;
+using Notifier.Vk.Contract;
 
 namespace Notifier.Vk.Implementation
 {
     internal class VkRestClientBuilder : IVkRestClientBuilder
     {
+        public VkRestClientBuilder(ILogger<VkRestClient> vkClientLogger)
+        {
+            _vkClientLogger = vkClientLogger;
+        }
         private string? _accessToken;
+        private readonly ILogger<VkRestClient> _vkClientLogger;
+
         public IVkRestClient Build()
         {
             if (_accessToken == null)
@@ -12,7 +19,7 @@ namespace Notifier.Vk.Implementation
                 throw new InvalidOperationException("Access token was not specified");
             }
 
-            return new VkRestClient(_accessToken);
+            return new VkRestClient(_accessToken, _vkClientLogger);
         }
         public IVkRestClientBuilder WithAccessToken(string accessToken)
         {

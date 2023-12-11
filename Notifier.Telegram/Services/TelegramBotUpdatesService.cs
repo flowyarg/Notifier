@@ -41,9 +41,9 @@ namespace Notifier.Telegram.Services
                             _logger.LogWarning("Update was not handled by any handler. Skipping update: {update}", JsonConvert.SerializeObject(update));
                         }
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
-                        //TODO
+                        _logger.LogError(ex, "Update {Update} handling failed", update.Id);
                         throw;
                     }
                     finally

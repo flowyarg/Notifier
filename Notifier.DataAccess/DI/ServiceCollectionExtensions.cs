@@ -17,10 +17,6 @@ namespace Notifier.DataAccess.DI
             services.AddDbContextFactory<NotifierDbContext>(options =>
             {
                 options.UseNpgsql(dataAccessSettings.ConnectionString);
-                if (dataAccessSettings.LogToConsole)
-                {
-                    options.LogTo(Console.WriteLine);
-                }
             });
         }
     }
