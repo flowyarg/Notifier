@@ -128,12 +128,11 @@ namespace Notifier.Logic.Services
             var subscriptions = await context.Subscriptions
                 .Where(subscription => subscription.SubscriberChatId == chatId)
                 .Include(subscription => subscription.Playlist)
+                .Select(subscription => subscription.Playlist.Url)
                 .AsNoTracking()
                 .ToArrayAsync();
 
-            return subscriptions
-                .Select(subscription => subscription.Playlist.Url)
-                .ToArray();
+            return subscriptions;
         }
     }
 }

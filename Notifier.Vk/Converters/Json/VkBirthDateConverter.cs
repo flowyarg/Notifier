@@ -20,13 +20,13 @@ namespace Notifier.Vk.Converters.Json
             var parts = data.Split('.');
             return parts switch
             {
-                { Length: var length } when length == 3 => new BirthDateInfo
+                { Length: 3 } => new BirthDateInfo
                 {
                     Day = int.Parse(parts[0]),
                     Month = int.Parse(parts[1]),
                     Year = int.Parse(parts[2]),
                 },
-                { Length: var length } when length == 2 => new BirthDateInfo
+                { Length: 2 } => new BirthDateInfo
                 {
                     Day = int.Parse(parts[0]),
                     Month = int.Parse(parts[1]),

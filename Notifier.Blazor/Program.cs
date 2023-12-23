@@ -3,7 +3,6 @@ using MudBlazor;
 using MudBlazor.Services;
 using Notifier.Blazor.Components;
 using Notifier.Blazor.DI;
-using Notifier.Blazor.Helpers;
 using Notifier.DataAccess.DI;
 using Notifier.Logic.DI;
 using Notifier.Telegram.DI;
@@ -42,12 +41,6 @@ builder.Services.AddDataAccess(builder.Configuration);
 builder.Services.AddLogicServices(builder.Configuration);
 builder.Services.AddVkApiServices(builder.Configuration);
 builder.Services.AddTelegramApiServices(builder.Configuration);
-
-//builder.Logging.AddCustomFormatter(configure =>
-//{
-//    configure.ColorBehavior = Microsoft.Extensions.Logging.Console.LoggerColorBehavior.Enabled;
-//    configure.CustomPrefix = "Test";
-//});
 
 var app = builder.Build();
 

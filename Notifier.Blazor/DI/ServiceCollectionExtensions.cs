@@ -28,7 +28,7 @@ namespace Notifier.Blazor.DI
                 provider.GetRequiredService<AESCrypto>(),
                 notifierSettings.EncryptionKey));
 
-            services.AddTransient(typeof(Lazy<>), typeof(Lazier<>));
+            services.AddTransient(typeof(Lazy<>), typeof(LazyResolver<>));
 
             services.AddTransient<TokenRefreshmentJob>();
             services.AddTransient<SyncPlaylistsJob>();

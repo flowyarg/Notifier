@@ -1,5 +1,4 @@
-﻿using Coravel.Invocable;
-using Coravel.Queuing.Interfaces;
+﻿using Coravel.Queuing.Interfaces;
 using Notifier.Logic.Extensions;
 using Notifier.Logic.Models;
 using Notifier.Logic.Services;

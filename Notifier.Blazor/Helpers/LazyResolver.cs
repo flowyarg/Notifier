@@ -1,9 +1,9 @@
 ﻿namespace Notifier.Blazor.Helpers
 {
-    public class Lazier<T> : Lazy<T> 
+    public class LazyResolver<T> : Lazy<T> 
         where T : class
     {
-        public Lazier(IServiceProvider provider)
+        public LazyResolver(IServiceProvider provider)
             : base(provider.GetRequiredService<T>)
         {}
     }
