@@ -10,6 +10,8 @@ using Notifier.Vk.DI;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Host.ConfigureCustomSerilog(builder.Configuration);
+
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddRazorComponents()

@@ -10,7 +10,10 @@ using Notifier.Telegram.Settings;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Remote;
+using Serilog;
+using Serilog.Sinks.Elasticsearch;
 using System.Diagnostics;
+using System.Reflection;
 
 namespace Notifier.Blazor.DI
 {
@@ -66,6 +69,22 @@ namespace Notifier.Blazor.DI
             services.Configure<TelegramApiSettings>(configuration.GetRequiredSection(nameof(TelegramApiSettings)));
         }
 
+        public static void ConfigureCustomSerilog(this IHostBuilder hostBuilder, IConfiguration configuration)
+        {
+            var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")!;
+            var logger = new LoggerConfiguration()
+                .Enrich.FromLogContext()
+                .Enrich.WithMachineName()
+                .WriteTo.Debug()
+                .WriteTo.Console()
+                .WriteTo.Elasticsearch(ConfigureElasticSink(configuration, environment))
+                .Enrich.WithProperty("Environment", environment)
+                .ReadFrom.Configuration(configuration)
+                .CreateLogger();
+
+            hostBuilder.UseSerilog(logger);
+        }
+
         private static RemoteWebDriver CreateDockerChromeDriver()
         {
             var chromeOptions = new ChromeOptions();
@@ -74,7 +93,7 @@ namespace Notifier.Blazor.DI
             chromeOptions.AddArgument("--window-size=1920,1080");
             chromeOptions.AddArgument("--enable-javascript");
 
-             var seleniumUrl = $"http://{(Debugger.IsAttached ? "host.docker.internal:4445" : "selenium.standalone:4444")}/wd/hub";
+            var seleniumUrl = $"http://{(Debugger.IsAttached ? "host.docker.internal:4445" : "selenium.standalone:4444")}/wd/hub";
             //var seleniumUrl = "http://localhost:4445/wd/hub";
             return new RemoteWebDriver(new Uri(seleniumUrl), chromeOptions);
         }
@@ -88,6 +107,16 @@ namespace Notifier.Blazor.DI
             chromeOptions.AddArgument("--enable-javascript");
             var driver = new ChromeDriver("S:\\chromedriver", chromeOptions);
             return driver;
+        }
+
+        private static ElasticsearchSinkOptions ConfigureElasticSink(IConfiguration configuration, string environment)
+        {
+            var elasticUri = configuration["ElasticConfiguration:Uri"]!;
+            return new(new Uri(elasticUri))
+            {
+                AutoRegisterTemplate = true,
+                IndexFormat = $"{Assembly.GetExecutingAssembly().GetName().Name!.ToLower().Replace(".", "-")}-{environment?.ToLower().Replace(".", "-")}-{DateTime.UtcNow:yyyy-MM}"
+            };
         }
     }
 }
