@@ -16,14 +16,7 @@ namespace Notifier.Blazor.Helpers.Routes
                 .To<UnaryExpression>()?.Operand
                 .To<MethodCallExpression>()?.Object
                 .To<ConstantExpression>()?.Value
-            as MethodInfo;                
-
-            //var methodInfo =
-            //   ((((actionExpression as LambdaExpression)
-            //       ?.Body as UnaryExpression)
-            //           ?.Operand as MethodCallExpression)
-            //               ?.Object as ConstantExpression)
-            //                   ?.Value as MethodInfo;
+            as MethodInfo;
 
             if (methodInfo == null)
             {
