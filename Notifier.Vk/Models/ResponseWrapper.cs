@@ -6,5 +6,8 @@ namespace Notifier.Vk.Models
     {
         [JsonProperty("response")]
         public TResponse? Response { get; set; }
+
+        [JsonProperty("error")]
+        public ResponseError? Error { get; set; }
     }
 }

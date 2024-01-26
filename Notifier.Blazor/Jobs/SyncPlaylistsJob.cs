@@ -54,6 +54,7 @@ namespace Notifier.Blazor.Jobs
 
             foreach (var playlist in playlistsToSync)
             {
+                _logger.LogInformation("Starting to sync playlist '{Playlist}'", playlist.Title);
                 List<VideoInfo> videosToAdd = [];
                 var existingVideos = await _videosService.GetVideos(playlist.Owner.Id, playlist.Id);
 

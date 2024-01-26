@@ -114,9 +114,19 @@ namespace Notifier.Vk.Implementation
                     .AddParameter("count", count)
                     .AddParameter("sort_album", 1);
 
-                currentOffset += count;
-
                 var responseData = await HandleRequest<ResponseWrapper<CollectionResponseWrapper<VideoInfo>>>(request);
+
+                if (responseData!.Error is not null)
+                {
+                    _logger.LogWarning("Request to {Url} resulted in error: Code: {ErrorCode}, Message: {ErrorMessage}", request.Resource, responseData.Error.ErrorCode, responseData.Error.ErrorMessage);
+                    if (responseData!.Error.ErrorCode == 6) // Too many requests per second
+                    {
+                        await Task.Delay(TimeSpan.FromSeconds(0.5));
+                        continue;
+                    }
+                }
+
+                currentOffset += count;
 
                 if (responseData!.Response?.Items == null)
                 {
@@ -130,7 +140,7 @@ namespace Notifier.Vk.Implementation
 
                 if (currentOffset >= responseData.Response.Count)
                 {
-                    break;
+                    yield break;
                 }
             }
         }
