@@ -10,6 +10,7 @@ using Notifier.Telegram.Settings;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Remote;
+using OpenTelemetry.Metrics;
 using Serilog;
 using Serilog.Sinks.Elasticsearch;
 using System.Diagnostics;
@@ -40,6 +41,27 @@ namespace Notifier.Blazor.DI
 
             services.AddTransient<IWebDriver>(_ => CreateDockerChromeDriver());
             //services.AddTransient<IWebDriver>(_ => CreateLocalChromeDriver());
+        }
+
+        public static void AddCustomOpenTelemetry(this IServiceCollection services)
+        {
+            services.AddOpenTelemetry()
+                .WithMetrics(x =>
+                {
+                    x.AddPrometheusExporter();
+                    x.AddMeter(
+                        "Microsoft.AspNetCore.Hosting",
+                        "Microsoft.AspNetCore.Server.Kestrel",
+                        "System.Net.Http",
+                        "Notifier.Blazor");
+                    
+                    x.AddView("request-duration", new ExplicitBucketHistogramConfiguration
+                    {
+                        Boundaries = [0, 0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1]
+                    });
+                });
+
+            services.AddMetrics();
         }
 
         public static void ConfigureScheduler(this IServiceProvider provider)

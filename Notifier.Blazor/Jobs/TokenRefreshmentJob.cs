@@ -5,6 +5,7 @@ using Notifier.Vk.Contract;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Support.UI;
 using SeleniumExtras.WaitHelpers;
+using System.Diagnostics.Metrics;
 
 namespace Notifier.Blazor.Jobs
 {
@@ -32,8 +33,9 @@ namespace Notifier.Blazor.Jobs
             AccessTokenService accessTokenService,
             IOptions<VkApiSettings> apiSettings,
             Lazy<IWebDriver> chromeDriver,
-            ILogger<TokenRefreshmentJob> logger)
-            : base(logger)
+            ILogger<TokenRefreshmentJob> logger,
+            IMeterFactory meterFactory)
+            : base(logger, meterFactory)
         {
             _authenticationClientBuilder = authenticationClientBuilder;
             _accessTokenService = accessTokenService;

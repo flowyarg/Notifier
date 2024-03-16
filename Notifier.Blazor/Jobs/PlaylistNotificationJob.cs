@@ -1,5 +1,6 @@
 ﻿using Coravel.Invocable;
 using Notifier.Telegram.Contract;
+using System.Diagnostics.Metrics;
 
 namespace Notifier.Blazor.Jobs
 {
@@ -9,8 +10,8 @@ namespace Notifier.Blazor.Jobs
 
         public (string OwnerId, string PlaylistId) Payload { get; set; }
 
-        public PlaylistNotificationJob(IPlaylistNotificationService playlistNotificationService, ILogger<PlaylistNotificationJob> logger)
-            : base(logger)
+        public PlaylistNotificationJob(IPlaylistNotificationService playlistNotificationService, ILogger<PlaylistNotificationJob> logger, IMeterFactory meterFactory)
+            : base(logger, meterFactory)
         {
             _playlistNotificationService = playlistNotificationService;
         }

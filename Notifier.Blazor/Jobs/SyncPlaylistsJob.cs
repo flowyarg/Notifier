@@ -3,6 +3,7 @@ using Notifier.Logic.Extensions;
 using Notifier.Logic.Models;
 using Notifier.Logic.Services;
 using Notifier.Vk.Contract;
+using System.Diagnostics.Metrics;
 
 namespace Notifier.Blazor.Jobs
 {
@@ -20,8 +21,9 @@ namespace Notifier.Blazor.Jobs
             VideosService videosService,
             IVkRestClientBuilder vkRestClientBuilder,
             IQueue queue,
-            ILogger<SyncPlaylistsJob> logger)
-            : base(logger)
+            ILogger<SyncPlaylistsJob> logger,
+            IMeterFactory meterFactory)
+            : base(logger, meterFactory)
         {
             _accessTokenService = accessTokenService;
             _playlistsService = playlistsService;

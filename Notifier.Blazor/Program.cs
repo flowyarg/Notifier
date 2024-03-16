@@ -43,6 +43,7 @@ builder.Services.AddDataAccess(builder.Configuration);
 builder.Services.AddLogicServices(builder.Configuration);
 builder.Services.AddVkApiServices(builder.Configuration);
 builder.Services.AddTelegramApiServices(builder.Configuration);
+builder.Services.AddCustomOpenTelemetry();
 
 var app = builder.Build();
 
@@ -54,7 +55,7 @@ if (!app.Environment.IsDevelopment())
     //app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 
@@ -71,5 +72,7 @@ app.MapControllers();
 app.MapControllerRoute(
     name: "default",
     pattern: "api/{controller}/{action}");
+
+app.MapPrometheusScrapingEndpoint();
 
 app.Run();
