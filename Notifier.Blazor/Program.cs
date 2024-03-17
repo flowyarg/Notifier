@@ -43,7 +43,7 @@ builder.Services.AddDataAccess(builder.Configuration);
 builder.Services.AddLogicServices(builder.Configuration);
 builder.Services.AddVkApiServices(builder.Configuration);
 builder.Services.AddTelegramApiServices(builder.Configuration);
-builder.Services.AddCustomOpenTelemetry();
+//builder.Services.AddCustomOpenTelemetry();
 
 var app = builder.Build();
 
@@ -73,6 +73,6 @@ app.MapControllerRoute(
     name: "default",
     pattern: "api/{controller}/{action}");
 
-app.MapPrometheusScrapingEndpoint();
+//app.MapPrometheusScrapingEndpoint();
 
 app.Run();
