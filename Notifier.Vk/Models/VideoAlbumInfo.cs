@@ -1,13 +1,16 @@
-﻿using Newtonsoft.Json;
-
-namespace Notifier.Vk.Models
+﻿namespace Notifier.Vk.Models
 {
+    using Converters.Json;
+    using Newtonsoft.Json;
+
     public class VideoAlbumInfo
     {
         [JsonProperty("id")]
+        [JsonConverter(typeof(VkVideoIntToStringFieldConverter))]
         public string Id { get; set; }
 
         [JsonProperty("owner_id")]
+        [JsonConverter(typeof(VkVideoIntToStringFieldConverter))]
         public string OwnerId { get; set; }
 
         [JsonProperty("title")]

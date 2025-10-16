@@ -3,12 +3,15 @@ using Newtonsoft.Json.Converters;
 
 namespace Notifier.Vk.Models
 {
+    using Converters.Json;
+
     public class VideoInfo
     {
         [JsonProperty("id")]
         public string Id { get; set; }
 
         [JsonProperty("owner_id")]
+        [JsonConverter(typeof(VkVideoIntToStringFieldConverter))]
         public string OwnerId { get; set; }
 
         [JsonProperty("title")]

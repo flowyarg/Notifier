@@ -5,10 +5,11 @@
 @using Notifier.Vk.Contract
 @using Notifier.Vk.Models
 @using Notifier.Logic.Extensions
-@inject AccessTokenService _accessTokenService
+@* @inject AccessTokenService _accessTokenService *@
 @inject OwnersService _ownersService
 @inject PlaylistsService _playlistsService
-@inject IVkRestClientBuilder _vkRestClientBuilder
+@* @inject IVkRestClientBuilder _vkRestClientBuilder *@
+@inject IVkVideoRestClient _VkVideoRestClient
 @inject ISnackbar _snackbar
 @inject NavigationManager _navigationManager
 
@@ -174,19 +175,19 @@
     private async Task AddPlaylist()
     {
         _loading = true;
-        var (token, validThrough) = await _accessTokenService.GetAccessToken();
+        //var (token, validThrough) = await _accessTokenService.GetAccessToken();
 
-        if (validThrough < DateTimeOffset.Now)
-        {
-            _loading = false;
-            throw new Exception("Invalid token");
-        }
+        // if (validThrough < DateTimeOffset.Now)
+        // {
+        //     _loading = false;
+        //     throw new Exception("Invalid token");
+        // }
+        //
+        // var vkClient = _vkRestClientBuilder
+        //     .WithAccessToken(token)
+        //     .Build();
 
-        var vkClient = _vkRestClientBuilder
-            .WithAccessToken(token)
-            .Build();
-
-        var playlists = await vkClient.FindVideoAlbums(_selectedOwner.Id, _selectedOwner.OwnerType.ToVk());
+        var playlists = await _VkVideoRestClient.FindVideoAlbums(_selectedOwner.Id, _selectedOwner.OwnerType.ToVk());
         ShowAddPlaylistsDialog(playlists);
     }
 

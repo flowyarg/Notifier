@@ -1,10 +1,12 @@
-﻿using Newtonsoft.Json;
-
-namespace Notifier.Vk.Models
+﻿namespace Notifier.Vk.Models
 {
+    using Converters.Json;
+    using Newtonsoft.Json;
+
     public class GroupInfo
     {
         [JsonProperty("id")]
+        [JsonConverter(typeof(VkVideoIntToStringFieldConverter))]
         public required string Id { get; set; }
 
         [JsonProperty("name")]
