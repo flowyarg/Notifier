@@ -13,11 +13,11 @@ using OpenQA.Selenium.Remote;
 using OpenTelemetry.Metrics;
 using Serilog;
 using Serilog.Sinks.Elasticsearch;
-using System.Diagnostics;
 using System.Reflection;
 
 namespace Notifier.Blazor.DI
 {
+    using System.Diagnostics;
     using Vk.Models.VkVideo;
 
     internal static class ServiceCollectionExtensions
@@ -43,7 +43,9 @@ namespace Notifier.Blazor.DI
             services.AddTransient<TelegramBotRunnerJob>();
 
 #if DEBUG
-            services.AddTransient<IWebDriver>(_ => CreateLocalChromeDriver());
+            services.AddTransient<IWebDriver>(_ => CreateDockerChromeDriver());
+
+            //services.AddTransient<IWebDriver>(_ => CreateLocalChromeDriver());
 #else
             services.AddTransient<IWebDriver>(_ => CreateDockerChromeDriver());
 #endif
@@ -76,11 +78,11 @@ namespace Notifier.Blazor.DI
             {
 #if DEBUG
                 
-                // scheduler.Schedule<SyncPlaylists2Job>()
-                //     .Hourly()
-                //     .RunOnceAtStart()
-                //     .PreventOverlapping(nameof(SyncPlaylists2Job));
-                //
+                scheduler.Schedule<SyncPlaylists2Job>()
+                    .Hourly()
+                    .RunOnceAtStart()
+                    .PreventOverlapping(nameof(SyncPlaylists2Job));
+                
                 // scheduler.Schedule<TelegramBotRunnerJob>()
                 //     .EverySeconds(15)
                 //     .PreventOverlapping(nameof(TelegramBotRunnerJob));
@@ -112,7 +114,6 @@ namespace Notifier.Blazor.DI
             services.Configure<NotifierSettings>(configuration.GetRequiredSection(nameof(NotifierSettings)));
             services.Configure<VkApiSettings>(configuration.GetRequiredSection(nameof(VkApiSettings)));
             services.Configure<TelegramApiSettings>(configuration.GetRequiredSection(nameof(TelegramApiSettings)));
-            services.Configure<VkVideoApiCredentials>(configuration.GetRequiredSection(nameof(VkVideoApiCredentials)));
         }
 
         public static void ConfigureCustomSerilog(this IHostBuilder hostBuilder, IConfiguration configuration)

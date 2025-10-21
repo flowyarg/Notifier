@@ -1,0 +1,48 @@
+352319: (e, t, n) => {
+            "use strict";
+            n.d(t, {
+                API_VERSION: () => E,
+                VK_ID_AUTH_APP: () => g,
+                VK_MVK_APP_ID: () => h,
+                VK_MVK_VKVIDEO_APP_ID: () => m,
+                VK_WEB_APP_ID: () => _,
+                VK_WEB_VKVIDEO_APP_ID: () => p,
+                clientId: () => y,
+                clientSecret: () => f
+            });
+            var r = n(105330)
+              , s = n(365006);
+            const a = "aR5NKGmm03GYrCiNKsaw"
+              , c = "QbYic1K3lEV5kTGiqlq2"
+              , l = "IjjCNl4L4Tf5QZEXIHKK"
+              , d = "o557NLIkAErNhakXrQ7A"
+              , u = "WStp4ihWG4l3nmXZgIbC"
+              , _ = 6287487
+              , h = 7879029
+              , p = 52461373
+              , m = 52649896
+              , g = 51781872
+              , {clientSecret: f, clientId: y} = ( () => {
+                let e = _
+                  , t = c;
+                return (0,
+                r.isMvk)() && (e = h,
+                t = a),
+                (0,
+                r.isVkMe)() && (e = 51745158,
+                t = l),
+                (0,
+                r.isVkVideo)() && (e = p,
+                t = d),
+                (0,
+                r.isMvkVKVideo)() && (e = m,
+                t = u),
+                {
+                    clientId: e,
+                    clientSecret: t
+                }
+            }
+            )()
+              , E = s.API_VERSION
+        }
+		

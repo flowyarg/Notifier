@@ -13,6 +13,8 @@ namespace Notifier.Vk.DI
             services.AddTransient<IVkRestClientBuilder, VkRestClientBuilder>();
             services.AddTransient<IVkAuthenticationRestClientBuilder, VkAuthenticationRestClientBuilder>();
             services.AddTransient<IVkVideoRestClient, VkVideoRestClient>();
+            services.AddTransient<VkVideoAuthRestClient>();
+            services.AddSingleton<VkVideoApiCredentialsService>();
         }
     }
 }
