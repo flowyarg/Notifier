@@ -16,12 +16,14 @@ namespace Notifier.Blazor.Jobs
         private const string _passwordInput = "input[type='password']";
         private const string _otpInput = "input[name='otp']";
         private const string _continueAsButton = "button[data-test-id='continue-as-button']";
+        private const string _emailRadioButtonSpan = "label:has(input[value='email'][type='radio']) > span";
 
         private readonly By _loginInputSelector = By.CssSelector(_loginInput);
         private readonly By _submitButtonSelector = By.CssSelector(_submitButton);
         private readonly By _passwordInputSelector = By.CssSelector(_passwordInput);
         private readonly By _otpInputSelector = By.CssSelector(_otpInput);
         private readonly By _continueAsButtonSelector = By.CssSelector(_continueAsButton);
+        private readonly By _emailRadioButtonSpanSelector = By.CssSelector(_emailRadioButtonSpan);
 
         private readonly IVkAuthenticationRestClientBuilder _authenticationClientBuilder;
         private readonly AccessTokenService _accessTokenService;
@@ -74,8 +76,11 @@ namespace Notifier.Blazor.Jobs
 
             var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(5));
 
-            wait.Until(ExpectedConditions.ElementIsVisible(_loginInputSelector));
             wait.Until(ExpectedConditions.ElementIsVisible(_submitButtonSelector));
+            wait.Until(ExpectedConditions.ElementToBeClickable(_emailRadioButtonSpanSelector));
+            
+            driver.FindElement(_emailRadioButtonSpanSelector).Click();
+            wait.Until(ExpectedConditions.ElementIsVisible(_loginInputSelector));
 
             driver.FindElement(_loginInputSelector).SendKeys(_apiSettings.Value.Login);
             driver.FindElement(_submitButtonSelector).Click();
@@ -101,7 +106,7 @@ namespace Notifier.Blazor.Jobs
             wait.Until(ExpectedConditions.UrlContains("?code="));
 
             //Not entirely correct but works
-            var code = driver.Url[(driver.Url.IndexOf("?code=") + 6)..];
+            var code = driver.Url[(driver.Url.IndexOf("?code=", StringComparison.Ordinal) + 6)..];
 
             var token = await authenticationClient.GetAccessToken(code);
 

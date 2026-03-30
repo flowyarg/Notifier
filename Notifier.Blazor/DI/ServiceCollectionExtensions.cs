@@ -13,11 +13,13 @@ using OpenQA.Selenium.Remote;
 using OpenTelemetry.Metrics;
 using Serilog;
 using Serilog.Sinks.Elasticsearch;
-using System.Diagnostics;
 using System.Reflection;
 
 namespace Notifier.Blazor.DI
 {
+    using System.Diagnostics;
+    using Vk.Models.VkVideo;
+
     internal static class ServiceCollectionExtensions
     {
         public static void AddServices(this IServiceCollection services, IConfiguration configuration)
@@ -36,11 +38,17 @@ namespace Notifier.Blazor.DI
 
             services.AddTransient<TokenRefreshmentJob>();
             services.AddTransient<SyncPlaylistsJob>();
+            services.AddTransient<SyncPlaylists2Job>();
             services.AddTransient<PlaylistNotificationJob>();
             services.AddTransient<TelegramBotRunnerJob>();
 
+#if DEBUG
             services.AddTransient<IWebDriver>(_ => CreateDockerChromeDriver());
+
             //services.AddTransient<IWebDriver>(_ => CreateLocalChromeDriver());
+#else
+            services.AddTransient<IWebDriver>(_ => CreateDockerChromeDriver());
+#endif
         }
 
         public static void AddCustomOpenTelemetry(this IServiceCollection services)
@@ -68,15 +76,32 @@ namespace Notifier.Blazor.DI
         {
             provider.UseScheduler(scheduler =>
             {
-                scheduler.Schedule<TokenRefreshmentJob>()
-                    .EveryTenMinutes()
-                    .RunOnceAtStart()
-                    .PreventOverlapping(nameof(TokenRefreshmentJob));
-
-                scheduler.Schedule<SyncPlaylistsJob>()
+#if DEBUG
+                
+                scheduler.Schedule<SyncPlaylists2Job>()
                     .Hourly()
                     .RunOnceAtStart()
-                    .PreventOverlapping(nameof(SyncPlaylistsJob));
+                    .PreventOverlapping(nameof(SyncPlaylists2Job));
+                
+                // scheduler.Schedule<TelegramBotRunnerJob>()
+                //     .EverySeconds(15)
+                //     .PreventOverlapping(nameof(TelegramBotRunnerJob));
+                return;
+#endif
+                // scheduler.Schedule<TokenRefreshmentJob>()
+                //     .EveryTenMinutes()
+                //     .RunOnceAtStart()
+                //     .PreventOverlapping(nameof(TokenRefreshmentJob));
+
+                // scheduler.Schedule<SyncPlaylistsJob>()
+                //     .Hourly()
+                //     .RunOnceAtStart()
+                //     .PreventOverlapping(nameof(SyncPlaylistsJob));
+                
+                scheduler.Schedule<SyncPlaylists2Job>()
+                    .Hourly()
+                    .RunOnceAtStart()
+                    .PreventOverlapping(nameof(SyncPlaylists2Job));
 
                 scheduler.Schedule<TelegramBotRunnerJob>()
                     .EverySeconds(15)
@@ -115,19 +140,18 @@ namespace Notifier.Blazor.DI
             chromeOptions.AddArgument("--window-size=1920,1080");
             chromeOptions.AddArgument("--enable-javascript");
 
-            var seleniumUrl = $"http://{(Debugger.IsAttached ? "host.docker.internal:4445" : "selenium.standalone:4444")}/wd/hub";
-            //var seleniumUrl = "http://localhost:4445/wd/hub";
+            var seleniumUrl = $"http://{(Debugger.IsAttached ? "host.docker.internal:4444" : "selenium.standalone:4444")}/wd/hub";
+            //var seleniumUrl = "http://localhost:4444/wd/hub";
             return new RemoteWebDriver(new Uri(seleniumUrl), chromeOptions);
         }
 
         private static ChromeDriver CreateLocalChromeDriver()
         {
             var chromeOptions = new ChromeOptions();
-            // chromeOptions.AddExtension("S:\\chromedriver\\4.46.2_0.crx");
             chromeOptions.AddArgument("--lang=en");
             chromeOptions.AddArgument("--window-size=1600,900");
             chromeOptions.AddArgument("--enable-javascript");
-            var driver = new ChromeDriver("S:\\chromedriver", chromeOptions);
+            var driver = new ChromeDriver("D:\\chromedriver-win64", chromeOptions);
             return driver;
         }
 

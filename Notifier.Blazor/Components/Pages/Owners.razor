@@ -5,9 +5,10 @@
 @using Notifier.Telegram
 @using Notifier.Vk.Contract
 @using Notifier.Vk.Models
-@inject AccessTokenService _accessTokenService
+@* @inject AccessTokenService _accessTokenService *@
 @inject OwnersService _ownersService
-@inject IVkRestClientBuilder _vkRestClientBuilder
+@* @inject IVkRestClientBuilder _vkRestClientBuilder *@
+@inject IVkVideoRestClient _vkVideoRestClient
 @inject ISnackbar _snackbar
 @inject NavigationManager _navigationManager
 
@@ -223,26 +224,27 @@
     private async Task AddOwner()
     {
         _loading = true;
-        var (token, validThrough) = await _accessTokenService.GetAccessToken();
+        //var (token, validThrough) = await _accessTokenService.GetAccessToken();
 
-        if (validThrough < DateTimeOffset.Now)
-        {
-            _loading = false;
-            throw new Exception("Invalid token");
-        }
+        // if (validThrough < DateTimeOffset.Now)
+        // {
+        //     _loading = false;
+        //     throw new Exception("Invalid token");
+        // }
 
-        var vkClient = _vkRestClientBuilder
-            .WithAccessToken(token)
-            .Build();
+        // var vkClient = _vkRestClientBuilder
+        //     .WithAccessToken(token)
+        //     .Build();
 
         if (_newOwner.Type == "User")
         {
-            var foundUsers = await vkClient.FindUsers(_newOwner.Query!);
-            ShowAddUserDialog(foundUsers);
+            _snackbar.Add("User addition no longer supported", Severity.Error);
+            await CloseDialog();
+            return;
         }
         if (_newOwner.Type == "Group")
         {
-            var foundGroups = await vkClient.FindGroups(_newOwner.Query!);
+            var foundGroups = await _vkVideoRestClient.FindGroups(_newOwner.Query!);
             ShowAddGroupsDialog(foundGroups);
         }
     }

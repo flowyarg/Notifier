@@ -31,7 +31,7 @@ namespace Notifier.Telegram.DI
                 .Where(type => typeof(ICommandHandler).IsAssignableFrom(type))
                 .Where(type => type.IsClass)
                 .Where(type => !type.IsAbstract)
-                .ToDictionary(handlerType => handlerType.GetProperty(nameof(ICommandHandler.Command))!.GetValue(null)!, handlerType => handlerType);
+                .ToDictionary(handlerType => (string)handlerType.GetProperty(nameof(ICommandHandler.Command))!.GetValue(null)!, handlerType => handlerType);
 
             foreach(var type in handlerTypes.Values)
             { 

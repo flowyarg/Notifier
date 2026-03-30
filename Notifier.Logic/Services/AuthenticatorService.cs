@@ -30,10 +30,10 @@ namespace Notifier.Logic.Services
         private const string _base32Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
         private const string _hexChars = "0123456789ABCDEF";
         private const int _stepDurationInSeconds = 30;
-        private readonly DateTimeOffset _beginningOfTime = new (1970, 1, 1, 0, 0, 0, TimeSpan.Zero);
+        private readonly DateTimeOffset _beginningOfTime = new(1970, 1, 1, 0, 0, 0, TimeSpan.Zero);
 
         private readonly byte[] _hexKeyBytes;
-
+        
         public AuthenticatorService(string base32key)
         {
             _hexKeyBytes = HexStr2Bytes(Base32Str2HexStr(base32key));
@@ -58,13 +58,13 @@ namespace Notifier.Logic.Services
 
             var hmacHex = BytesToHexString(hash);
 
-            var offset = HexToDecimal(hmacHex[(hmacHex.Length - 1)..]);
+            var offset = HexToDecimal(hmacHex[^1..]);
             //var part1 = hmacHex[..(offset * 2)];
             var part2 = hmacHex.Substring(offset * 2, 8);
             //var part3 = hmacHex[(offset * 2 + 8)..];
 
             var code = (HexToDecimal(part2) & 0x7FFFFFFF).ToString();
-            code = code[(code.Length - 6)..];
+            code = code[^6..];
             return code;
         }
 
@@ -86,7 +86,8 @@ namespace Notifier.Logic.Services
                 bits.Insert(0, "0", 4 - bits.Length % 4);
             }
 
-            var hex = new string(bits.ToString().Chunk(4).Select(chunk => _binaryToHexTable[new string(chunk)]).ToArray());
+            var hex = new string(bits.ToString().Chunk(4).Select(chunk => _binaryToHexTable[new string(chunk)])
+                .ToArray());
 
             return hex;
         }
@@ -113,6 +114,7 @@ namespace Notifier.Logic.Services
                 result.Append(_hexChars[bytes[i] / 16]);
                 result.Append(_hexChars[bytes[i] % 16]);
             }
+
             return result.ToString();
         }
 
@@ -123,7 +125,7 @@ namespace Notifier.Logic.Services
 
         private static string DecimalToHex(long number)
         {
-            return string.Format("{0:X}", number).ToUpper();
+            return $"{number:X}".ToUpper();
         }
     }
 }
