@@ -1,5 +1,4 @@
 ﻿using Notifier.Telegram.Contract;
-using System.Diagnostics.Metrics;
 
 namespace Notifier.Blazor.Jobs
 {
@@ -7,8 +6,8 @@ namespace Notifier.Blazor.Jobs
     {
         private readonly ITelegramBotUpdatesService _telegramBotService;
 
-        public TelegramBotRunnerJob(ITelegramBotUpdatesService telegramBotService, ILogger<TelegramBotRunnerJob> logger, IMeterFactory meterFactory)
-            : base(logger, meterFactory) 
+        public TelegramBotRunnerJob(ITelegramBotUpdatesService telegramBotService, ILogger<TelegramBotRunnerJob> logger)
+            : base(logger) 
         {
             _telegramBotService = telegramBotService;
         }

@@ -1,35 +1,30 @@
-﻿using Coravel.Queuing.Interfaces;
-using Notifier.Logic.Extensions;
-using Notifier.Logic.Models;
-using Notifier.Logic.Services;
-using Notifier.Vk.Contract;
-using System.Diagnostics.Metrics;
-
-namespace Notifier.Blazor.Jobs
+﻿namespace Notifier.Blazor.Jobs
 {
+    using Coravel.Queuing.Interfaces;
+    using Logic.Extensions;
+    using Logic.Models;
+    using Logic.Services;
+    using Vk.Contract;
+
     internal class SyncPlaylistsJob : Job<SyncPlaylistsJob>
     {
-        private readonly AccessTokenService _accessTokenService;
         private readonly PlaylistsService _playlistsService;
         private readonly VideosService _videosService;
-        private readonly IVkRestClientBuilder _vkRestClientBuilder;
+        private readonly IVkVideoRestClient _vkVideoRestClient;
         private readonly IQueue _queue;
 
         public SyncPlaylistsJob(
-            AccessTokenService accessTokenService,
             PlaylistsService playlistsService,
             VideosService videosService,
-            IVkRestClientBuilder vkRestClientBuilder,
             IQueue queue,
             ILogger<SyncPlaylistsJob> logger,
-            IMeterFactory meterFactory)
-            : base(logger, meterFactory)
+            IVkVideoRestClient vkVideoRestClient)
+            : base(logger)
         {
-            _accessTokenService = accessTokenService;
             _playlistsService = playlistsService;
             _videosService = videosService;
-            _vkRestClientBuilder = vkRestClientBuilder;
             _queue = queue;
+            _vkVideoRestClient = vkVideoRestClient;
         }
 
         protected override async Task Run()
@@ -41,17 +36,6 @@ namespace Notifier.Blazor.Jobs
                 return;
             }
 
-            var (accessToken, validThrough) = await _accessTokenService.GetAccessToken();
-
-            if (validThrough < DateTimeOffset.Now)
-            {
-                throw new Exception("Vk token has expired");
-            }
-
-            using var vkClient = _vkRestClientBuilder
-                .WithAccessToken(accessToken)
-                .Build();
-
             _logger.LogInformation("Starting to sync {Count} playlists", playlistsToSync.Count);
 
             foreach (var playlist in playlistsToSync)
@@ -62,7 +46,7 @@ namespace Notifier.Blazor.Jobs
 
                 var existingIds = existingVideos.Select(video => video.Id).ToHashSet();
 
-                await foreach (var vkVideo in vkClient.GetVideos(playlist.Owner.Id, playlist.Owner.OwnerType.ToVk(), playlist.Id))
+                await foreach (var vkVideo in _vkVideoRestClient.GetVideos(playlist.Owner.Id, playlist.Owner.OwnerType.ToVk(), playlist.Id))
                 {
                     if (existingIds.Contains(vkVideo.Id))
                     {

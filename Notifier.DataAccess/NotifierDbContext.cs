@@ -9,8 +9,6 @@ namespace Notifier.DataAccess
     {
         public NotifierDbContext(DbContextOptions options) : base(options)
         { }
-
-        public virtual DbSet<AccessToken> AccessTokens { get; set; }
         public virtual DbSet<Owner> Owners { get; set; }
         public virtual DbSet<User> Users { get; set; }
         public virtual DbSet<Group> Groups { get; set; }

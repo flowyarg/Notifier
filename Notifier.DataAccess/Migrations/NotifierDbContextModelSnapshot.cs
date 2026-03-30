@@ -22,30 +22,6 @@ namespace Notifier.DataAccess.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("Notifier.DataAccess.Model.AccessToken", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("IV")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Token")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTimeOffset>("ValidThrough")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("AccessTokens");
-                });
-
             modelBuilder.Entity("Notifier.DataAccess.Model.Owner", b =>
                 {
                     b.Property<int>("Id")
