@@ -367,3 +367,4 @@ docker-compose.yml
 /Notifier.Blazor/appsettings.Development.json
 /Notifier.DataAccess/NotifierDbContextDesignFactory.cs
 /Notifier.Blazor/docker.txt
+.aider*

@@ -2,10 +2,8 @@
 using Microsoft.EntityFrameworkCore;
 using Notifier.Blazor.Helpers;
 using Notifier.Blazor.Jobs;
-using Notifier.Blazor.Settings;
 using Notifier.DataAccess;
 using Notifier.Logic.Services;
-using Notifier.Logic.Services.Security;
 using Notifier.Telegram.Settings;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
@@ -13,32 +11,19 @@ using OpenQA.Selenium.Remote;
 using OpenTelemetry.Metrics;
 using Serilog;
 using Serilog.Sinks.Elasticsearch;
+using System.Diagnostics;
 using System.Reflection;
 
 namespace Notifier.Blazor.DI
 {
-    using System.Diagnostics;
-    using Vk.Models.VkVideo;
 
     internal static class ServiceCollectionExtensions
     {
         public static void AddServices(this IServiceCollection services, IConfiguration configuration)
         {
-            var notifierSettings = configuration
-                .GetRequiredSection(nameof(NotifierSettings))
-                .Get<NotifierSettings>()
-                ?? throw new Exception($"{nameof(NotifierSettings)} not found in application configuration");
-
-            services.AddSingleton(provider => new AccessTokenService(
-                provider.GetRequiredService<IDbContextFactory<NotifierDbContext>>(),
-                provider.GetRequiredService<AESCrypto>(),
-                notifierSettings.EncryptionKey));
-
             services.AddTransient(typeof(Lazy<>), typeof(LazyResolver<>));
 
-            services.AddTransient<TokenRefreshmentJob>();
             services.AddTransient<SyncPlaylistsJob>();
-            services.AddTransient<SyncPlaylists2Job>();
             services.AddTransient<PlaylistNotificationJob>();
             services.AddTransient<TelegramBotRunnerJob>();
 
@@ -51,57 +36,26 @@ namespace Notifier.Blazor.DI
 #endif
         }
 
-        public static void AddCustomOpenTelemetry(this IServiceCollection services)
-        {
-            services.AddOpenTelemetry()
-                .WithMetrics(x =>
-                {
-                    x.AddPrometheusExporter();
-                    x.AddMeter(
-                        "Microsoft.AspNetCore.Hosting",
-                        "Microsoft.AspNetCore.Server.Kestrel",
-                        "System.Net.Http",
-                        "Notifier.Blazor");
-                    
-                    x.AddView("request-duration", new ExplicitBucketHistogramConfiguration
-                    {
-                        Boundaries = [0, 0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1]
-                    });
-                });
-
-            services.AddMetrics();
-        }
-
         public static void ConfigureScheduler(this IServiceProvider provider)
         {
             provider.UseScheduler(scheduler =>
             {
 #if DEBUG
                 
-                scheduler.Schedule<SyncPlaylists2Job>()
-                    .Hourly()
-                    .RunOnceAtStart()
-                    .PreventOverlapping(nameof(SyncPlaylists2Job));
-                
-                // scheduler.Schedule<TelegramBotRunnerJob>()
-                //     .EverySeconds(15)
-                //     .PreventOverlapping(nameof(TelegramBotRunnerJob));
-                return;
-#endif
-                // scheduler.Schedule<TokenRefreshmentJob>()
-                //     .EveryTenMinutes()
-                //     .RunOnceAtStart()
-                //     .PreventOverlapping(nameof(TokenRefreshmentJob));
-
                 // scheduler.Schedule<SyncPlaylistsJob>()
                 //     .Hourly()
                 //     .RunOnceAtStart()
                 //     .PreventOverlapping(nameof(SyncPlaylistsJob));
+                return;
+                // scheduler.Schedule<TelegramBotRunnerJob>()
+                //     .EverySeconds(15)
+                //     .PreventOverlapping(nameof(TelegramBotRunnerJob));
+#endif
                 
-                scheduler.Schedule<SyncPlaylists2Job>()
+                scheduler.Schedule<SyncPlaylistsJob>()
                     .Hourly()
                     .RunOnceAtStart()
-                    .PreventOverlapping(nameof(SyncPlaylists2Job));
+                    .PreventOverlapping(nameof(SyncPlaylistsJob));
 
                 scheduler.Schedule<TelegramBotRunnerJob>()
                     .EverySeconds(15)
@@ -111,8 +65,6 @@ namespace Notifier.Blazor.DI
 
         public static void ConfigureSettings(this IServiceCollection services, IConfiguration configuration)
         {
-            services.Configure<NotifierSettings>(configuration.GetRequiredSection(nameof(NotifierSettings)));
-            services.Configure<VkApiSettings>(configuration.GetRequiredSection(nameof(VkApiSettings)));
             services.Configure<TelegramApiSettings>(configuration.GetRequiredSection(nameof(TelegramApiSettings)));
         }
 
