@@ -25,7 +25,7 @@ public class VkVideoRestClient : RestClient, IVkVideoRestClient
     
     public async IAsyncEnumerable<VideoInfo> GetVideos(string ownerId, VkOwnerType ownerType, string albumId)
     {
-        var credentials = await _credentialsService.GetCredentials();
+        var credentials = await _credentialsService.GetNewCredentials();
 
         if (ownerType == VkOwnerType.Group)
         {

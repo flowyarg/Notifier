@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Notifier.Matrix.Services;
 using Notifier.Matrix.Settings;
 using RestSharp;
 using RestSharp.Authenticators.OAuth2;
@@ -10,17 +11,24 @@ namespace Notifier.Matrix.Implementation;
 
 public class MatrixRestClientWithAuthorization : BaseMatrixRestClient<MatrixRestClientWithNoAuthorization>
 {
+    private readonly MatrixCredentialsService _credentialsService;
     public MatrixRestClientWithAuthorization(IOptions<MatrixApiSettings> apiSettings,
         IOptions<MatrixApiSettings> matrixApiSettings,
-        ILogger<MatrixRestClientWithNoAuthorization> logger) 
-        : base(apiSettings, logger,
-        authenticator: new OAuth2AuthorizationRequestHeaderAuthenticator(matrixApiSettings.Value.AccessToken, "Bearer"))
+        ILogger<MatrixRestClientWithNoAuthorization> logger, 
+        MatrixCredentialsService credentialsService) 
+        : base(apiSettings, logger)
     {
+        _credentialsService = credentialsService;
     }
 
     public async Task<string[]> GetJoinedRooms()
     {
-        var request = new RestRequest("_matrix/client/v3/joined_rooms");
+        var accessToken = await  _credentialsService.GetAccessToken();
+        
+        var request = new RestRequest("_matrix/client/v3/joined_rooms")
+        {
+            Authenticator = new OAuth2AuthorizationRequestHeaderAuthenticator(accessToken, "Bearer")
+        };
 
         var response = await HandleRequest<In.GetJoinedRoomsResponse>(request);
         return response!.Rooms;
@@ -28,7 +36,12 @@ public class MatrixRestClientWithAuthorization : BaseMatrixRestClient<MatrixRest
     
     public async Task<In.GetUserIdResponse> GetClientId()
     {
-        var request = new RestRequest("_matrix/client/v3/account/whoami");
+        var accessToken = await  _credentialsService.GetAccessToken();
+
+        var request = new RestRequest("_matrix/client/v3/account/whoami")
+        {
+            Authenticator = new OAuth2AuthorizationRequestHeaderAuthenticator(accessToken, "Bearer")
+        };
 
         var response = await HandleRequest<In.GetUserIdResponse>(request);
         return response!;

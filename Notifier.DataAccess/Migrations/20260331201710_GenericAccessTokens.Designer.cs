@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Notifier.DataAccess;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Notifier.DataAccess.Migrations
 {
     [DbContext(typeof(NotifierDbContext))]
-    partial class NotifierDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260331201710_GenericAccessTokens")]
+    partial class GenericAccessTokens
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -173,10 +176,6 @@ namespace Notifier.DataAccess.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("DeviceCode")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<string>("DeviceId")
                         .IsRequired()
                         .HasColumnType("text");
@@ -185,7 +184,7 @@ namespace Notifier.DataAccess.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("Scope")
+                    b.Property<string>("Scopes")
                         .IsRequired()
                         .HasColumnType("text");
 

@@ -16,6 +16,7 @@ namespace Notifier.Matrix.DI
             services.AddSingleton<MadgeburgMatrixRestClientWithNoAuthorization>();
             
             services.AddSingleton<SimpleMatrixService>();
+            services.AddSingleton<MatrixCredentialsService>();
             AddCommandHandlers(services);
             AddUpdateHandlers(services);
         }

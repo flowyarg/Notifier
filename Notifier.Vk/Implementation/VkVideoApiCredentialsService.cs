@@ -1,11 +1,16 @@
-namespace Notifier.Vk.Implementation;
-
+using Microsoft.EntityFrameworkCore;
+using Notifier.DataAccess;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
-using Models.VkVideo;
+using Notifier.DataAccess.Model;
+using Notifier.Vk.Models.VkVideo;
+
+namespace Notifier.Vk.Implementation;
 
 public partial class VkVideoApiCredentialsService
 {
+    private const int AccessTokenId = 1;
+    
     private static readonly Regex WebChunksParseRegex = CreateWebChunksParsingRegex();
     private static readonly Regex ApiVersionParsingRegex = CreateApiVersionParsingRegex();
     private static readonly Regex ClientSecretParsingRegex = CreateClientSecretParsingRegex();
@@ -13,26 +18,36 @@ public partial class VkVideoApiCredentialsService
     private static readonly Regex AppIdParsingRegex = CreateAppIdParsingRegex();
 
     private readonly VkVideoAuthRestClient _authRestClient;
+    private readonly IDbContextFactory<NotifierDbContext> _dbContextFactory;
     private readonly ILogger<VkVideoApiCredentialsService> _logger;
     
     private VkVideoApiCredentials? _credentials;
 
-    public VkVideoApiCredentialsService(VkVideoAuthRestClient authRestClient, ILogger<VkVideoApiCredentialsService> logger)
+    public VkVideoApiCredentialsService(VkVideoAuthRestClient authRestClient, ILogger<VkVideoApiCredentialsService> logger, IDbContextFactory<NotifierDbContext> dbContextFactory)
     {
         _authRestClient = authRestClient;
         _logger = logger;
+        _dbContextFactory = dbContextFactory;
     }
 
     public async Task<VkVideoApiCredentials> GetCredentials()
     {
-        _credentials ??= await GenerateCredentials();
+        _credentials ??= await LoadCredentials();
+        _credentials ??= await GenerateAndStoreCredentials();
         return _credentials;
     }
 
     public async Task<VkVideoApiCredentials> GetNewCredentials()
     {
-        _credentials = await GenerateCredentials();
+        _credentials = await GenerateAndStoreCredentials();
         return _credentials;
+    }
+
+    private async Task<VkVideoApiCredentials> GenerateAndStoreCredentials()
+    {
+        var credentials = await GenerateCredentials();
+        await StoreCredentials(credentials);
+        return credentials;
     }
 
     private async Task<VkVideoApiCredentials> GenerateCredentials()
@@ -59,7 +74,8 @@ public partial class VkVideoApiCredentialsService
         {
             ApiVersion = apiVersion,
             ClientId = clientId,
-            AccessToken = accessToken
+            AccessToken = accessToken,
+            Scopes = scopes
         };
         _logger.LogInformation("Credentials generated successfully");
 
@@ -95,6 +111,47 @@ public partial class VkVideoApiCredentialsService
         return allMatches
             .GroupBy(m => m.Key)
             .ToDictionary(g => g.Key, g => string.Join("_____IDK_WHAT_TO_DO_HERE_____", g.Select(gg => gg.Content)));
+    }
+
+    private async Task StoreCredentials(VkVideoApiCredentials credentials)
+    {
+        await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
+        var accessToken = await dbContext.VkVideoAccessTokens.FindAsync(AccessTokenId);
+        if (accessToken is null)
+        {
+            _ = dbContext.VkVideoAccessTokens.Add(new VkVideoAccessToken
+            {
+                Id = AccessTokenId,
+                AccessToken = credentials.AccessToken,
+                ClientId = credentials.ClientId,
+                ApiVersion = credentials.ApiVersion,
+                Scopes = credentials.Scopes
+            });
+        }
+        else
+        {
+            accessToken.AccessToken = credentials.AccessToken;
+            accessToken.ClientId = credentials.ClientId;
+            accessToken.ApiVersion = credentials.ApiVersion;
+            accessToken.Scopes = credentials.Scopes;
+        }
+
+        await dbContext.SaveChangesAsync();
+    }
+    
+    private async Task<VkVideoApiCredentials?> LoadCredentials()
+    {
+        await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
+        var accessToken = await dbContext.VkVideoAccessTokens.FindAsync(AccessTokenId);
+        return accessToken is null
+            ? null
+            : new VkVideoApiCredentials
+            {
+                AccessToken = accessToken.AccessToken,
+                ClientId = accessToken.ClientId,
+                ApiVersion = accessToken.ApiVersion,
+                Scopes =  accessToken.Scopes
+            };
     }
 
     [GeneratedRegex(@"(\d+):")]

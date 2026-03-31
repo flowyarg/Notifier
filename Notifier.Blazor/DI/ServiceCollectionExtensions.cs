@@ -28,6 +28,7 @@ namespace Notifier.Blazor.DI
             services.AddTransient<SyncPlaylistsJob>();
             services.AddTransient<PlaylistNotificationJob>();
             services.AddTransient<TelegramBotRunnerJob>();
+            services.AddTransient<TestJob>();
 
 #if DEBUG
             services.AddTransient<IWebDriver>(_ => CreateDockerChromeDriver());
@@ -43,6 +44,11 @@ namespace Notifier.Blazor.DI
             provider.UseScheduler(scheduler =>
             {
 #if DEBUG
+
+                scheduler.Schedule<TestJob>()
+                    .Hourly()
+                    .RunOnceAtStart()
+                    .PreventOverlapping(nameof(TestJob));
                 
                 // scheduler.Schedule<SyncPlaylistsJob>()
                 //     .Hourly()
