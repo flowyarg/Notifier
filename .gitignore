@@ -368,3 +368,6 @@ docker-compose.yml
 /Notifier.DataAccess/NotifierDbContextDesignFactory.cs
 /Notifier.Blazor/docker.txt
 .aider*
+
+.idea/
+.vscode/

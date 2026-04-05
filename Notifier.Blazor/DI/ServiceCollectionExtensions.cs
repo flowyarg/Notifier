@@ -13,6 +13,8 @@ using Serilog;
 using Serilog.Sinks.Elasticsearch;
 using System.Diagnostics;
 using System.Reflection;
+using Notifier.Matrix.Settings;
+using System.Diagnostics;
 
 namespace Notifier.Blazor.DI
 {
@@ -26,6 +28,7 @@ namespace Notifier.Blazor.DI
             services.AddTransient<SyncPlaylistsJob>();
             services.AddTransient<PlaylistNotificationJob>();
             services.AddTransient<TelegramBotRunnerJob>();
+            services.AddTransient<TestJob>();
 
 #if DEBUG
             services.AddTransient<IWebDriver>(_ => CreateDockerChromeDriver());
@@ -41,6 +44,11 @@ namespace Notifier.Blazor.DI
             provider.UseScheduler(scheduler =>
             {
 #if DEBUG
+
+                scheduler.Schedule<TestJob>()
+                    .Hourly()
+                    .RunOnceAtStart()
+                    .PreventOverlapping(nameof(TestJob));
                 
                 // scheduler.Schedule<SyncPlaylistsJob>()
                 //     .Hourly()
@@ -66,6 +74,7 @@ namespace Notifier.Blazor.DI
         public static void ConfigureSettings(this IServiceCollection services, IConfiguration configuration)
         {
             services.Configure<TelegramApiSettings>(configuration.GetRequiredSection(nameof(TelegramApiSettings)));
+            services.Configure<MatrixApiSettings>(configuration.GetRequiredSection(nameof(MatrixApiSettings)));
         }
 
         public static void ConfigureCustomSerilog(this IHostBuilder hostBuilder, IConfiguration configuration)

@@ -5,6 +5,7 @@ using Notifier.Blazor.Components;
 using Notifier.Blazor.DI;
 using Notifier.DataAccess.DI;
 using Notifier.Logic.DI;
+using Notifier.Matrix.DI;
 using Notifier.Telegram.DI;
 using Notifier.Vk.DI;
 
@@ -43,7 +44,7 @@ builder.Services.AddDataAccess(builder.Configuration);
 builder.Services.AddLogicServices(builder.Configuration);
 builder.Services.AddVkApiServices(builder.Configuration);
 builder.Services.AddTelegramApiServices(builder.Configuration);
-//builder.Services.AddCustomOpenTelemetry();
+builder.Services.AddMatrixApiServices(builder.Configuration);
 
 var app = builder.Build();
 

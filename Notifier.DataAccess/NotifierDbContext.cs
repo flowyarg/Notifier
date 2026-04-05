@@ -15,6 +15,9 @@ namespace Notifier.DataAccess
         public virtual DbSet<Playlist> Playlists { get; set; }
         public virtual DbSet<Video> Videos { get; set; }
         public virtual DbSet<PlaylistSubscription> Subscriptions { get; set; }
+        public virtual DbSet<AccessTokenInfo>  AccessTokens { get; set; }
+        public virtual DbSet<MatrixAccessToken>  MatrixAccessTokens { get; set; }
+        public virtual DbSet<VkVideoAccessToken>  VkVideoAccessTokens { get; set; }
 
         protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
         {
@@ -27,6 +30,10 @@ namespace Notifier.DataAccess
         {
             modelBuilder
                 .Entity<Owner>()
+                .UseTptMappingStrategy();
+            
+            modelBuilder
+                .Entity<AccessTokenInfo>()
                 .UseTptMappingStrategy();
 
             modelBuilder
